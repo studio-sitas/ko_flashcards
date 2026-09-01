@@ -12,12 +12,14 @@ type Route =
     | { name: 'revise'; slug: string }
     | { name: 'list'; slug: string }
     | { name: 'add'; slug: string }
-    | { name: 'import' };
+    | { name: 'import' }
+    | { name: 'quiz' };
 
 function parseHash(hash: string): Route {
     const clean = hash.replace(/^#/, '');
     const segs = clean.split('/').filter(Boolean);
     if (segs[0] === 'import') return { name: 'import' };
+    if (segs[0] === 'quiz') return { name: 'quiz' };
     if (segs[0] === 'category' && segs[1]) {
         const slug = decodeURIComponent(segs[1]);
         if (segs[2] === 'list') return { name: 'list', slug };
@@ -62,6 +64,10 @@ function App() {
         return <ImportPhoto onBack={() => goto('/')} onImported={() => goto('/')} />;
     }
 
+    if (route.name === 'quiz') {
+        return <FlashcardDeck slug="__all__" categoryName="Quiz complet" mixedCategories onBack={() => goto('/')} />;
+    }
+
     if (route.name === 'revise') {
         return (
             <FlashcardDeck
@@ -98,6 +104,7 @@ function App() {
         <CategoryMenu
             onOpen={(slug) => goto(`/category/${slug}`)}
             onImport={() => goto('/import')}
+            onQuiz={() => goto('/quiz')}
             theme={theme}
             onToggleTheme={toggleTheme}
         />

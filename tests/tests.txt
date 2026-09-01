@@ -88,14 +88,19 @@ Steps:
 
 Expected: After step 3, a visible error message indicates the photo analysis failed and includes a specific reason (not just a generic phrase), a retry option is shown, and no candidate word list appears.
 
-## Test 6 - Toggle dark mode and keep it after reload
+## Test 6 - Quiz complet mixes words from every category
 Viewport: desktop
-Covers: theme toggle, per-device preference persistence across reload
+Covers: cross-category flashcard aggregation, per-card verb switcher awareness in mixed mode
 
-Description: Verifies the dark mode toggle switches the interface's color scheme and that the choice survives a page reload.
+Setup:
+1. Open "Noms", go to "Gérer les mots" then "Ajouter un mot", and add the word "친구" / "chingu" / "ami"
+2. Open "Verbes", go to "Gérer les mots" then "Ajouter un mot", and add the word "가다" / "gada" / "aller", then wait for the add to finish
+
+Description: Verifies that "Quiz complet" on the main menu pulls together words from every category into a single deck, labels each card with its source category, and only shows the verb register/temps/négation switcher when the current card is a verb.
 
 Steps:
-1. On the main menu, click the theme toggle button in the header
-2. Refresh the page
+1. From the main menu, click "Quiz complet"
+2. Browse through the cards (swipe or arrow buttons) until reaching the "친구" card and note whether the register/temps/négation switcher is visible
+3. Continue browsing until reaching the "가다" card and note whether the switcher is visible, then flip the card
 
-Expected: Immediately after the click the page switches to a dark background/color scheme and the toggle button now shows a sun icon (indicating dark mode is active); after the reload the page still shows the dark color scheme.
+Expected: Both "친구" (labeled "Noms") and "가다" (labeled "Verbes") appear in the deck. The switcher is hidden for "친구" and visible for "가다"; flipping "가다" reveals the French translation "aller".

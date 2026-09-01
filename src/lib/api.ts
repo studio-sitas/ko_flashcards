@@ -38,6 +38,8 @@ export interface Word {
     forms?: Record<string, VerbForm>;
     formsGeneratedAt?: number;
     example?: ExampleSentence | null;
+    /** Only set client-side, when words from several categories are merged (quiz mode). */
+    categoryName?: string;
 }
 
 export interface Candidate {

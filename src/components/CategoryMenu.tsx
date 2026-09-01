@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Camera, Sun, Moon, Settings, AlertTriangle, X } from 'lucide-react';
+import { Camera, Shuffle, Sun, Moon, Settings, AlertTriangle, X } from 'lucide-react';
 import { type CategorySummary, fetchCategories, resetAllData } from '../lib/api';
 import type { Theme } from '../lib/theme';
 
 interface Props {
     onOpen: (slug: string) => void;
     onImport: () => void;
+    onQuiz: () => void;
     theme: Theme;
     onToggleTheme: () => void;
 }
 
-export function CategoryMenu({ onOpen, onImport, theme, onToggleTheme }: Props) {
+export function CategoryMenu({ onOpen, onImport, onQuiz, theme, onToggleTheme }: Props) {
     const [categories, setCategories] = useState<CategorySummary[] | null>(null);
     const [errorMsg, setErrorMsg] = useState('');
     const [showSettings, setShowSettings] = useState(false);
@@ -79,6 +80,19 @@ export function CategoryMenu({ onOpen, onImport, theme, onToggleTheme }: Props) 
             </div>
 
             {errorMsg && <p className="text-red-600 dark:text-red-400 text-sm mb-4">{errorMsg}</p>}
+
+            <button
+                onClick={onQuiz}
+                className="w-full flex items-center gap-3 bg-gold-600 hover:bg-gold-700 text-white rounded-2xl p-4 mb-4 shadow-sm transition-colors"
+            >
+                <span className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 shrink-0">
+                    <Shuffle size={20} />
+                </span>
+                <span className="text-left">
+                    <span className="block font-display font-semibold">Quiz complet</span>
+                    <span className="block text-xs text-gold-100">Toutes les catégories mélangées</span>
+                </span>
+            </button>
 
             {categories === null ? (
                 <p className="text-stone-400 dark:text-stone-500">Chargement…</p>

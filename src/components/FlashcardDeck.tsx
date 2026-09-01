@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Shuffle, ChevronLeft, ChevronRight, ArrowLeft, ListChecks, Loader2 } from 'lucide-react';
-import { type Word, fetchWords } from '../lib/api';
+import { type Word, fetchCategories, fetchWords } from '../lib/api';
 import {
     CONJUGATION_OPTIONS,
     DEFAULT_CONJUGATION,
@@ -37,10 +37,12 @@ interface Props {
     slug: string;
     categoryName: string;
     onBack: () => void;
-    onManage: () => void;
+    onManage?: () => void;
+    /** Quiz mode: pull words from every category, tagged with their own category name, and shuffle them together. */
+    mixedCategories?: boolean;
 }
 
-export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
+export function FlashcardDeck({ slug, categoryName, onBack, onManage, mixedCategories }: Props) {
     const [words, setWords] = useState<Word[] | null>(null);
     const [loadError, setLoadError] = useState(false);
     const [order, setOrder] = useState<Word[]>([]);
@@ -61,7 +63,16 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
         let cancelled = false;
         setWords(null);
         setLoadError(false);
-        fetchWords(slug)
+        const load = mixedCategories
+            ? fetchCategories().then((cats) =>
+                  Promise.all(
+                      cats.map((c) =>
+                          fetchWords(c.slug).then((ws) => ws.map((w) => ({ ...w, categoryName: c.name })))
+                      )
+                  ).then((lists) => lists.flat())
+              )
+            : fetchWords(slug);
+        load
             .then((ws) => {
                 if (!cancelled) setWords(ws);
             })
@@ -74,16 +85,18 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [slug]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [slug, mixedCategories]);
 
     useEffect(() => {
         if (words === null) return;
-        setOrder(words);
+        setOrder(mixedCategories ? shuffleArray(words) : words);
         setIndex(0);
         setFlipped(false);
         setDragX(0);
         setAnimating(false);
         setInstant(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [words]);
 
     const changeCard = (delta: number) => {
@@ -156,18 +169,22 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                     <p className="text-lg text-stone-600 dark:text-stone-300 mb-4">
                         {loadError
                             ? 'Impossible de charger les mots pour le moment.'
-                            : 'Aucun mot dans cette catégorie pour le moment.'}
+                            : mixedCategories
+                              ? "Aucun mot pour le moment. Ajoute des mots dans au moins une catégorie."
+                              : 'Aucun mot dans cette catégorie pour le moment.'}
                     </p>
-                    <button onClick={onManage} className="px-4 py-2 rounded-full bg-gold-600 hover:bg-gold-700 text-white font-medium transition-colors">
-                        Ajouter un mot
-                    </button>
+                    {onManage && (
+                        <button onClick={onManage} className="px-4 py-2 rounded-full bg-gold-600 hover:bg-gold-700 text-white font-medium transition-colors">
+                            Ajouter un mot
+                        </button>
+                    )}
                 </div>
             </div>
         );
     }
 
     const current = order[index];
-    const isVerbs = isVerbCategory(categoryName);
+    const isVerbs = isVerbCategory(current.categoryName || categoryName);
     const form = isVerbs ? current.forms?.[formKey(registre, conjugaison, negation)] : undefined;
     const displayTerm = form?.term || current.term;
     const displayPronunciation = form?.pronunciation || current.pronunciation;
@@ -185,10 +202,11 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                   return next;
               })();
     const previewWord = previewIndex !== null ? order[previewIndex] : null;
-    const previewForm = isVerbs ? previewWord?.forms?.[formKey(registre, conjugaison, negation)] : undefined;
+    const previewIsVerbs = isVerbCategory(previewWord?.categoryName || categoryName);
+    const previewForm = previewIsVerbs ? previewWord?.forms?.[formKey(registre, conjugaison, negation)] : undefined;
     const previewDisplayTerm = previewForm?.term || previewWord?.term;
     const previewDisplayPronunciation = previewForm?.pronunciation || previewWord?.pronunciation;
-    const previewStillGenerating = isVerbs && !!previewWord && !previewWord.forms;
+    const previewStillGenerating = previewIsVerbs && !!previewWord && !previewWord.forms;
     const previewX = direction === 0 ? 0 : dragX + (direction === 1 ? EXIT_DISTANCE : -EXIT_DISTANCE);
 
     const exitProgress = clamp01(Math.abs(dragX) / EXIT_DISTANCE);
@@ -269,6 +287,11 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                             <div className="w-full h-full [perspective:1200px]">
                                 <div className="relative w-full h-full [transform-style:preserve-3d]">
                                     <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col p-8 [backface-visibility:hidden]">
+                                        {mixedCategories && previewWord?.categoryName && (
+                                            <p className="text-[11px] uppercase tracking-widest text-gold-600 dark:text-gold-400 text-center font-semibold">
+                                                {previewWord.categoryName}
+                                            </p>
+                                        )}
                                         <div className="flex-1 flex flex-col items-center justify-center gap-3">
                                             <p className="font-display text-5xl font-bold text-ink dark:text-paper text-center break-words">
                                                 {previewDisplayTerm}
@@ -312,6 +335,11 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                                 style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                             >
                                 <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col p-8 [backface-visibility:hidden]">
+                                    {mixedCategories && current.categoryName && (
+                                        <p className="text-[11px] uppercase tracking-widest text-gold-600 dark:text-gold-400 text-center font-semibold">
+                                            {current.categoryName}
+                                        </p>
+                                    )}
                                     <div className="flex-1 flex flex-col items-center justify-center gap-3">
                                         <p className="font-display text-5xl font-bold text-ink dark:text-paper text-center break-words">
                                             {displayTerm}
@@ -366,9 +394,11 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                 >
                     <ChevronLeft />
                 </button>
-                <button onClick={onManage} className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 underline">
-                    <ListChecks size={16} /> Gérer les mots
-                </button>
+                {onManage && (
+                    <button onClick={onManage} className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 underline">
+                        <ListChecks size={16} /> Gérer les mots
+                    </button>
+                )}
                 <button
                     onClick={() => changeCard(1)}
                     aria-label="Mot suivant"
