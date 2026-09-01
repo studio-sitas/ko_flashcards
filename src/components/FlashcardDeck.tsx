@@ -145,6 +145,10 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                   return next;
               })();
     const previewWord = previewIndex !== null ? order[previewIndex] : null;
+    const previewForm = isVerbs ? previewWord?.forms?.[formKey(registre, conjugaison, negation)] : undefined;
+    const previewDisplayTerm = previewForm?.term || previewWord?.term;
+    const previewDisplayPronunciation = previewForm?.pronunciation || previewWord?.pronunciation;
+    const previewStillGenerating = isVerbs && !!previewWord && !previewWord.forms;
     const previewX = direction === 0 ? 0 : dragX + (direction === 1 ? EXIT_DISTANCE : -EXIT_DISTANCE);
 
     const exitProgress = clamp01(Math.abs(dragX) / EXIT_DISTANCE);
@@ -224,9 +228,15 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                         >
                             <div className="w-full h-full rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8">
                                 <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
-                                    {previewWord.term}
+                                    {previewDisplayTerm}
                                 </p>
-                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{previewWord.pronunciation}</p>
+                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{previewDisplayPronunciation}</p>
+                                {previewStillGenerating && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                        Conjugaisons en cours de génération…
+                                    </p>
+                                )}
+                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
                             </div>
                         </div>
                     )}
