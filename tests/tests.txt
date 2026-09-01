@@ -1,19 +1,21 @@
 # Tests
 
-## Test 1 - Create a verb with register/conjugation, review it, and edit it [sanity]
+## Test 1 - Add a verb, correct one conjugated form, and see it on the flashcard [sanity]
 Viewport: desktop
-Covers: category creation, manual word creation with register/conjugation selection, database create, flashcard flip/reveal showing register+conjugation badges, word edit, persistence after reload
-Description: Verifies the core verb workflow — creating a "Verbes" category, adding a verb with a non-default register/conjugation, reviewing it as a flashcard with the right badges, editing it, and confirming the change persists.
+Covers: category creation, verb creation triggering automatic conjugation generation, flashcard register/tense/negation switcher, manual correction of a single generated form, persistence after reload
+Description: Verifies that adding a verb auto-generates its conjugations, that switching register/tense/negation on the flashcard changes what is displayed, and that a manually corrected form is saved and shown both in word management and on the flashcard.
 
 Steps:
 1. On the main menu, click "Nouvelle catégorie", type "Verbes" and confirm creation
-2. Open "Verbes", go to "Gérer les mots" then "Ajouter un mot"
-3. Fill in "가다" as the Korean word, "gada" as pronunciation, "aller" as translation, select register "Familier" and conjugation "Présent", then submit
-4. Go to the "Verbes" flashcard view and click the card to flip it
-5. Go back to "Gérer les mots", click the edit icon on "가다", change the register to "Poli", and save
-6. Refresh the page and open "Verbes" again
+2. Open "Verbes", go to "Gérer les mots" then "Ajouter un mot": Korean word "가다", pronunciation "gada", translation "aller", then submit and wait for the add to finish
+3. Go to the "Verbes" flashcard view and note the Korean word shown on the front of the card
+4. Use the "Temps" switcher below the card to select "Présent"
+5. Go back to "Gérer les mots", click the row for "가다" to expand its conjugations, then select register "Familier", temps "Présent" and négation "Affirmatif" in the switcher
+6. Click the pencil icon next to the displayed form, enter "테스트폼" as the Korean word and "tesuteupom" as pronunciation, then save
+7. Refresh the page, re-expand the conjugations for "가다", and reselect register "Familier", temps "Présent", négation "Affirmatif"
+8. Go to the "Verbes" flashcard view and set its switcher to register "Familier", temps "Présent", négation "Affirmatif"
 
-Expected: After step 4, the front of the card shows "가다" / "gada" with badges "Familier" and "Présent", and flipping reveals "aller". After the edit and refresh, the word list for "Verbes" shows "가다" with badges "Poli" and "Présent" (register changed, conjugation unchanged).
+Expected: In step 4, switching to "Présent" changes the Korean word shown on the card to something different from what was shown in step 3. After step 6 the correction is saved. After the refresh in step 7, the "Familier" / "Présent" / "Affirmatif" conjugation still shows "테스트폼" / "tesuteupom". In step 8, the flashcard front also shows "테스트폼" for that same combination.
 
 ## Test 2 - Delete a category and cascade-delete its words
 Viewport: desktop

@@ -1,18 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Pencil, Trash2, Plus, Check, X } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Plus, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { type Word, deleteWord, fetchWords, updateWord } from '../lib/api';
-import { ChoiceButtons } from './ChoiceButtons';
-import {
-    CONJUGATION_OPTIONS,
-    DEFAULT_CONJUGATION,
-    DEFAULT_REGISTER,
-    REGISTER_OPTIONS,
-    conjugationLabel,
-    isVerbCategory,
-    registerLabel,
-    type Conjugation,
-    type Register,
-} from '../lib/verbs';
+import { VerbFormsPanel } from './VerbFormsPanel';
+import { isVerbCategory } from '../lib/verbs';
 
 interface Props {
     slug: string;
@@ -25,20 +15,13 @@ interface Draft {
     term: string;
     pronunciation: string;
     translation: string;
-    registre: Register;
-    conjugaison: Conjugation;
 }
 
 export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
     const [words, setWords] = useState<Word[] | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [draft, setDraft] = useState<Draft>({
-        term: '',
-        pronunciation: '',
-        translation: '',
-        registre: DEFAULT_REGISTER,
-        conjugaison: DEFAULT_CONJUGATION,
-    });
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [draft, setDraft] = useState<Draft>({ term: '', pronunciation: '', translation: '' });
     const [confirmDelete, setConfirmDelete] = useState<Word | null>(null);
     const [errorMsg, setErrorMsg] = useState('');
     const isVerbs = isVerbCategory(categoryName);
@@ -58,13 +41,7 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
 
     const startEdit = (w: Word) => {
         setEditingId(w.id);
-        setDraft({
-            term: w.term,
-            pronunciation: w.pronunciation,
-            translation: w.translation,
-            registre: (w.registre as Register) || DEFAULT_REGISTER,
-            conjugaison: (w.conjugaison as Conjugation) || DEFAULT_CONJUGATION,
-        });
+        setDraft({ term: w.term, pronunciation: w.pronunciation, translation: w.translation });
         setErrorMsg('');
     };
 
@@ -92,6 +69,10 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
         } catch {
             setErrorMsg('Échec de la suppression.');
         }
+    };
+
+    const updateWordInPlace = (updated: Word) => {
+        setWords((ws) => (ws ? ws.map((w) => (w.id === updated.id ? updated : w)) : ws));
     };
 
     return (
@@ -134,20 +115,9 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
                                         className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-2 py-1"
                                     />
                                     {isVerbs && (
-                                        <>
-                                            <ChoiceButtons
-                                                label="Registre"
-                                                options={REGISTER_OPTIONS}
-                                                value={draft.registre}
-                                                onChange={(registre) => setDraft({ ...draft, registre })}
-                                            />
-                                            <ChoiceButtons
-                                                label="Conjugaison"
-                                                options={CONJUGATION_OPTIONS}
-                                                value={draft.conjugaison}
-                                                onChange={(conjugaison) => setDraft({ ...draft, conjugaison })}
-                                            />
-                                        </>
+                                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                                            Si tu changes le mot en coréen, toutes les conjugaisons seront régénérées automatiquement.
+                                        </p>
                                     )}
                                     <div className="flex gap-2">
                                         <button onClick={saveEdit} className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
@@ -162,40 +132,47 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-between gap-2">
-                                    <div>
-                                        <p className="font-medium text-slate-800 dark:text-slate-100">
-                                            {w.term}{' '}
-                                            <span className="text-slate-400 dark:text-slate-500 font-normal">· {w.pronunciation}</span>
-                                        </p>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">{w.translation}</p>
-                                        {isVerbs && (
-                                            <div className="flex gap-1.5 mt-1">
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
-                                                    {registerLabel(w.registre)}
-                                                </span>
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
-                                                    {conjugationLabel(w.conjugaison)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-1 shrink-0">
+                                <div>
+                                    <div className="flex items-center justify-between gap-2">
                                         <button
-                                            onClick={() => startEdit(w)}
-                                            aria-label={`Modifier ${w.term}`}
-                                            className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600"
+                                            className="text-left flex-1"
+                                            onClick={() => isVerbs && setExpandedId(expandedId === w.id ? null : w.id)}
                                         >
-                                            <Pencil size={16} />
+                                            <p className="font-medium text-slate-800 dark:text-slate-100">
+                                                {w.term}{' '}
+                                                <span className="text-slate-400 dark:text-slate-500 font-normal">· {w.pronunciation}</span>
+                                            </p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">{w.translation}</p>
                                         </button>
-                                        <button
-                                            onClick={() => setConfirmDelete(w)}
-                                            aria-label={`Supprimer ${w.term}`}
-                                            className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="flex gap-1 shrink-0 items-center">
+                                            {isVerbs && (
+                                                <button
+                                                    onClick={() => setExpandedId(expandedId === w.id ? null : w.id)}
+                                                    aria-label="Voir les conjugaisons"
+                                                    className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600"
+                                                >
+                                                    {expandedId === w.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => startEdit(w)}
+                                                aria-label={`Modifier ${w.term}`}
+                                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmDelete(w)}
+                                                aria-label={`Supprimer ${w.term}`}
+                                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
+                                    {isVerbs && expandedId === w.id && (
+                                        <VerbFormsPanel slug={slug} word={w} onUpdated={updateWordInPlace} />
+                                    )}
                                 </div>
                             )}
                         </li>

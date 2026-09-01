@@ -1,7 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { Shuffle, ChevronLeft, ChevronRight, ArrowLeft, ListChecks } from 'lucide-react';
 import type { Word } from '../lib/api';
-import { conjugationLabel, isVerbCategory, registerLabel } from '../lib/verbs';
+import {
+    CONJUGATION_OPTIONS,
+    DEFAULT_CONJUGATION,
+    DEFAULT_NEGATION,
+    DEFAULT_REGISTER,
+    NEGATION_OPTIONS,
+    REGISTER_OPTIONS,
+    formKey,
+    isVerbCategory,
+    type Conjugation,
+    type Negation,
+    type Register,
+} from '../lib/verbs';
+import { ChoiceButtons } from './ChoiceButtons';
 
 const SWIPE_THRESHOLD = 80;
 const EXIT_DISTANCE = 480;
@@ -31,6 +44,9 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
     const [dragging, setDragging] = useState(false);
     const [animating, setAnimating] = useState(false);
     const [instant, setInstant] = useState(false);
+    const [registre, setRegistre] = useState<Register>(DEFAULT_REGISTER);
+    const [conjugaison, setConjugaison] = useState<Conjugation>(DEFAULT_CONJUGATION);
+    const [negation, setNegation] = useState<Negation>(DEFAULT_NEGATION);
     const startX = useRef(0);
     const orderRef = useRef(order);
     orderRef.current = order;
@@ -108,7 +124,11 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
     }
 
     const current = order[index];
-    const showVerbBadges = isVerbCategory(categoryName);
+    const isVerbs = isVerbCategory(categoryName);
+    const form = isVerbs ? current.forms?.[formKey(registre, conjugaison, negation)] : undefined;
+    const displayTerm = form?.term || current.term;
+    const displayPronunciation = form?.pronunciation || current.pronunciation;
+    const stillGenerating = isVerbs && !current.forms;
 
     const handleStart = (clientX: number) => {
         if (animating) return;
@@ -151,7 +171,7 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                 </button>
             </header>
 
-            <div className="flex-1 flex items-center justify-center px-6 pb-6 overflow-hidden">
+            <div className="flex-1 flex items-center justify-center px-6 pb-2 overflow-hidden">
                 <div
                     className="w-full max-w-sm select-none touch-pan-y"
                     style={{
@@ -179,25 +199,23 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                         >
                             <div className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
                                 <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
-                                    {current.term}
+                                    {displayTerm}
                                 </p>
-                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{current.pronunciation}</p>
-                                {showVerbBadges && (
-                                    <div className="flex gap-2">
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
-                                            {registerLabel(current.registre)}
-                                        </span>
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
-                                            {conjugationLabel(current.conjugaison)}
-                                        </span>
-                                    </div>
+                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{displayPronunciation}</p>
+                                {stillGenerating && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                        Conjugaisons en cours de génération…
+                                    </p>
                                 )}
                                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
                             </div>
                             <div className="absolute inset-0 rounded-3xl bg-emerald-600 dark:bg-emerald-700 shadow-xl flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                <p className="text-3xl font-bold text-white text-center break-words">{current.translation}</p>
+                                <p className="text-3xl font-bold text-white text-center break-words">
+                                    {current.translation}
+                                    {isVerbs && negation === 'negatif' ? ' (négatif)' : ''}
+                                </p>
                                 <p className="text-sm text-emerald-100">
-                                    {current.term} · {current.pronunciation}
+                                    {displayTerm} · {displayPronunciation}
                                 </p>
                             </div>
                         </div>
@@ -205,7 +223,15 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                 </div>
             </div>
 
-            <div className="flex items-center justify-center gap-6 pb-8">
+            {isVerbs && (
+                <div className="px-6 pb-2 max-w-sm mx-auto w-full space-y-2">
+                    <ChoiceButtons label="Registre" options={REGISTER_OPTIONS} value={registre} onChange={setRegistre} />
+                    <ChoiceButtons label="Temps" options={CONJUGATION_OPTIONS} value={conjugaison} onChange={setConjugaison} />
+                    <ChoiceButtons label="Négation" options={NEGATION_OPTIONS} value={negation} onChange={setNegation} />
+                </div>
+            )}
+
+            <div className="flex items-center justify-center gap-6 py-6">
                 <button
                     onClick={() => changeCard(-1)}
                     aria-label="Mot précédent"

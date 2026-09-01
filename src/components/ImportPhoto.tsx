@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowLeft, Camera, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import { image } from '@appdeploy/client';
 import {
     type Candidate,
@@ -8,23 +8,12 @@ import {
     extractWordsFromImage,
     fetchCategories,
 } from '../lib/api';
-import { ChoiceButtons } from './ChoiceButtons';
-import {
-    CONJUGATION_OPTIONS,
-    DEFAULT_CONJUGATION,
-    DEFAULT_REGISTER,
-    REGISTER_OPTIONS,
-    isVerbCategory,
-    type Conjugation,
-    type Register,
-} from '../lib/verbs';
+import { isVerbCategory } from '../lib/verbs';
 
-type Step = 'select' | 'analyzing' | 'review' | 'done' | 'error';
+type Step = 'select' | 'analyzing' | 'review' | 'saving' | 'done' | 'error';
 
 interface EditableCandidate extends Candidate {
     include: boolean;
-    registre: Register;
-    conjugaison: Conjugation;
 }
 
 interface Props {
@@ -50,14 +39,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 extractWordsFromImage(prepared.data, prepared.mimeType),
             ]);
             setCategories(cats);
-            setCandidates(
-                result.map((c) => ({
-                    ...c,
-                    include: !c.duplicate,
-                    registre: DEFAULT_REGISTER,
-                    conjugaison: DEFAULT_CONJUGATION,
-                }))
-            );
+            setCandidates(result.map((c) => ({ ...c, include: !c.duplicate })));
             setStep('review');
         } catch {
             setErrorMsg('La lecture de la photo a échoué. Vérifie ta connexion et réessaie.');
@@ -69,6 +51,8 @@ export function ImportPhoto({ onBack, onImported }: Props) {
         setCandidates((cs) => cs.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
     };
 
+    const includesVerbs = candidates.some((c) => c.include && isVerbCategory(c.suggestedCategory));
+
     const submit = async () => {
         const entries = candidates
             .filter((c) => c.include && c.term.trim() && c.translation.trim() && c.suggestedCategory.trim())
@@ -77,11 +61,9 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 pronunciation: c.pronunciation.trim(),
                 translation: c.translation.trim(),
                 categoryName: c.suggestedCategory.trim(),
-                registre: isVerbCategory(c.suggestedCategory) ? c.registre : undefined,
-                conjugaison: isVerbCategory(c.suggestedCategory) ? c.conjugaison : undefined,
             }));
         if (!entries.length) return;
-        setStep('analyzing');
+        setStep('saving');
         setErrorMsg('');
         try {
             const res = await bulkAddWords(entries);
@@ -138,6 +120,19 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 </div>
             )}
 
+            {step === 'saving' && (
+                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500 dark:text-slate-400 text-center px-6">
+                    <Loader2 className="animate-spin" size={32} />
+                    <p>Ajout en cours…</p>
+                    {includesVerbs && (
+                        <p className="text-xs max-w-xs">
+                            Génération des conjugaisons pour les verbes — ça peut prendre quelques dizaines de secondes
+                            pour plusieurs verbes.
+                        </p>
+                    )}
+                </div>
+            )}
+
             {step === 'error' && (
                 <div className="flex flex-col items-center gap-3 mt-16 text-center">
                     <AlertTriangle className="text-red-500" size={32} />
@@ -165,10 +160,17 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                         </div>
                     ) : (
                         <>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
                                 {candidates.length} mot{candidates.length !== 1 ? 's' : ''} détecté
                                 {candidates.length !== 1 ? 's' : ''}. Vérifie, corrige et choisis les mots à ajouter.
                             </p>
+                            {includesVerbs && (
+                                <p className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5 mb-4">
+                                    <Sparkles size={14} className="shrink-0 mt-0.5" />
+                                    Pour les mots catégorisés « Verbes », les conjugaisons (registres, temps, négation)
+                                    seront générées automatiquement à l'ajout.
+                                </p>
+                            )}
                             <ul className="space-y-3 mb-6">
                                 {candidates.map((c, i) => (
                                     <li
@@ -218,22 +220,6 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                                     className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
                                                     placeholder="Catégorie"
                                                 />
-                                                {isVerbCategory(c.suggestedCategory) && (
-                                                    <div className="space-y-2 pt-1">
-                                                        <ChoiceButtons
-                                                            label="Registre"
-                                                            options={REGISTER_OPTIONS}
-                                                            value={c.registre}
-                                                            onChange={(registre) => updateCandidate(i, { registre })}
-                                                        />
-                                                        <ChoiceButtons
-                                                            label="Conjugaison"
-                                                            options={CONJUGATION_OPTIONS}
-                                                            value={c.conjugaison}
-                                                            onChange={(conjugaison) => updateCandidate(i, { conjugaison })}
-                                                        />
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </li>

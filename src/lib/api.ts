@@ -7,13 +7,18 @@ export interface CategorySummary {
     count: number;
 }
 
+export interface VerbForm {
+    term: string;
+    pronunciation: string;
+}
+
 export interface Word {
     id: string;
     term: string;
     pronunciation: string;
     translation: string;
-    registre?: string;
-    conjugaison?: string;
+    forms?: Record<string, VerbForm>;
+    formsGeneratedAt?: number;
 }
 
 export interface Candidate {
@@ -49,8 +54,6 @@ export async function addWord(params: {
     term: string;
     pronunciation: string;
     translation: string;
-    registre?: string;
-    conjugaison?: string;
     force?: boolean;
 }): Promise<{ duplicate: boolean; existingCategory?: string; word?: Word & { category: string; slug: string } }> {
     const { data } = await api.post('/api/words', params);
@@ -60,7 +63,7 @@ export async function addWord(params: {
 export async function updateWord(
     slug: string,
     id: string,
-    params: { term: string; pronunciation: string; translation: string; registre?: string; conjugaison?: string }
+    params: { term: string; pronunciation: string; translation: string }
 ): Promise<Word> {
     const { data } = await api.put(`/api/words/${encodeURIComponent(slug)}/${id}`, params);
     return data.word as Word;
@@ -68,6 +71,23 @@ export async function updateWord(
 
 export async function deleteWord(slug: string, id: string): Promise<void> {
     await api.delete(`/api/words/${encodeURIComponent(slug)}/${id}`);
+}
+
+export async function regenerateVerbForms(
+    slug: string,
+    id: string
+): Promise<{ forms: Record<string, VerbForm>; formsGeneratedAt: number }> {
+    const { data } = await api.post(`/api/words/${encodeURIComponent(slug)}/${id}/regenerate-forms`, {});
+    return data;
+}
+
+export async function correctVerbForm(
+    slug: string,
+    id: string,
+    params: { registre: string; conjugaison: string; negation: string; term: string; pronunciation: string }
+): Promise<{ forms: Record<string, VerbForm> }> {
+    const { data } = await api.put(`/api/words/${encodeURIComponent(slug)}/${id}/form`, params);
+    return data;
 }
 
 export async function extractWordsFromImage(
@@ -80,14 +100,7 @@ export async function extractWordsFromImage(
 }
 
 export async function bulkAddWords(
-    entries: Array<{
-        term: string;
-        pronunciation: string;
-        translation: string;
-        categoryName: string;
-        registre?: string;
-        conjugaison?: string;
-    }>
+    entries: Array<{ term: string; pronunciation: string; translation: string; categoryName: string }>
 ): Promise<{ added: Array<{ term: string; category: string }>; skipped: Array<{ term: string; reason: string }> }> {
     const { data } = await api.post('/api/words/bulk-add', { entries });
     return data;

@@ -1,16 +1,7 @@
 import { useState } from 'react';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { addWord } from '../lib/api';
-import { ChoiceButtons } from './ChoiceButtons';
-import {
-    CONJUGATION_OPTIONS,
-    DEFAULT_CONJUGATION,
-    DEFAULT_REGISTER,
-    REGISTER_OPTIONS,
-    isVerbCategory,
-    type Conjugation,
-    type Register,
-} from '../lib/verbs';
+import { isVerbCategory } from '../lib/verbs';
 
 interface Props {
     categoryName: string;
@@ -22,8 +13,6 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
     const [term, setTerm] = useState('');
     const [pronunciation, setPronunciation] = useState('');
     const [translation, setTranslation] = useState('');
-    const [registre, setRegistre] = useState<Register>(DEFAULT_REGISTER);
-    const [conjugaison, setConjugaison] = useState<Conjugation>(DEFAULT_CONJUGATION);
     const [errorMsg, setErrorMsg] = useState('');
     const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
@@ -37,15 +26,7 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
         }
         setBusy(true);
         try {
-            const res = await addWord({
-                categoryName,
-                term,
-                pronunciation,
-                translation,
-                registre: isVerbs ? registre : undefined,
-                conjugaison: isVerbs ? conjugaison : undefined,
-                force,
-            });
+            const res = await addWord({ categoryName, term, pronunciation, translation, force });
             if (res.duplicate && !force) {
                 setDuplicateWarning(res.existingCategory || categoryName);
             } else {
@@ -77,14 +58,14 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
             >
                 <div>
                     <label className="text-sm text-slate-600 dark:text-slate-400 block mb-1" htmlFor="word-term">
-                        Mot en coréen *
+                        Mot en coréen {isVerbs ? '(infinitif) ' : ''}*
                     </label>
                     <input
                         id="word-term"
                         value={term}
                         onChange={(e) => setTerm(e.target.value)}
                         className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2"
-                        placeholder="예: 친구"
+                        placeholder={isVerbs ? '예: 가다' : '예: 친구'}
                     />
                 </div>
                 <div>
@@ -113,15 +94,11 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
                 </div>
 
                 {isVerbs && (
-                    <>
-                        <ChoiceButtons label="Registre" options={REGISTER_OPTIONS} value={registre} onChange={setRegistre} />
-                        <ChoiceButtons
-                            label="Conjugaison"
-                            options={CONJUGATION_OPTIONS}
-                            value={conjugaison}
-                            onChange={setConjugaison}
-                        />
-                    </>
+                    <p className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5">
+                        <Sparkles size={14} className="shrink-0 mt-0.5" />
+                        Les conjugaisons (3 registres × 4 temps × affirmatif/négatif) seront générées automatiquement à
+                        partir de cet infinitif — modifiables ensuite dans « Gérer les mots ».
+                    </p>
                 )}
 
                 {errorMsg && <p className="text-red-600 dark:text-red-400 text-sm">{errorMsg}</p>}
@@ -156,7 +133,7 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
                     disabled={busy}
                     className="w-full bg-emerald-600 text-white rounded-lg py-2.5 font-medium disabled:opacity-50"
                 >
-                    Ajouter
+                    {busy && isVerbs ? 'Génération des conjugaisons…' : 'Ajouter'}
                 </button>
             </form>
         </div>
