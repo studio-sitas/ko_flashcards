@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Pencil, Trash2, Plus, Check, X, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { type Word, deleteWord, fetchWords, regenerateExample, updateWord } from '../lib/api';
 import { VerbFormsPanel } from './VerbFormsPanel';
@@ -26,16 +26,22 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
     const [errorMsg, setErrorMsg] = useState('');
     const [regeneratingExampleId, setRegeneratingExampleId] = useState<string | null>(null);
     const isVerbs = isVerbCategory(categoryName);
+    const activeSlug = useRef(slug);
 
     const load = async () => {
+        const requestedSlug = slug;
         try {
-            setWords(await fetchWords(slug));
+            const ws = await fetchWords(requestedSlug);
+            if (activeSlug.current === requestedSlug) setWords(ws);
         } catch {
-            setErrorMsg('Impossible de charger les mots.');
+            if (activeSlug.current === requestedSlug) setErrorMsg('Impossible de charger les mots.');
         }
     };
 
     useEffect(() => {
+        activeSlug.current = slug;
+        setWords(null);
+        setErrorMsg('');
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug]);

@@ -4,7 +4,7 @@ import { FlashcardDeck } from './components/FlashcardDeck';
 import { WordList } from './components/WordList';
 import { AddWordForm } from './components/AddWordForm';
 import { ImportPhoto } from './components/ImportPhoto';
-import { type CategorySummary, type Word, fetchCategories, fetchWords } from './lib/api';
+import { type CategorySummary, fetchCategories } from './lib/api';
 import { type Theme, applyTheme, getInitialTheme } from './lib/theme';
 
 type Route =
@@ -34,7 +34,6 @@ function goto(path: string) {
 function App() {
     const [hash, setHash] = useState(window.location.hash);
     const [categories, setCategories] = useState<CategorySummary[]>([]);
-    const [words, setWords] = useState<Word[]>([]);
     const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
     useEffect(() => {
@@ -57,15 +56,6 @@ function App() {
             .catch(() => {});
     }, [route.name]);
 
-    useEffect(() => {
-        if (route.name === 'revise' || route.name === 'list') {
-            fetchWords(route.slug)
-                .then(setWords)
-                .catch(() => setWords([]));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [route.name, route.name === 'revise' || route.name === 'list' ? route.slug : null]);
-
     const nameFor = (slug: string) => categories.find((c) => c.slug === slug)?.name || slug;
 
     if (route.name === 'import') {
@@ -75,7 +65,7 @@ function App() {
     if (route.name === 'revise') {
         return (
             <FlashcardDeck
-                words={words}
+                slug={route.slug}
                 categoryName={nameFor(route.slug)}
                 onBack={() => goto('/')}
                 onManage={() => goto(`/category/${route.slug}/list`)}

@@ -2,12 +2,12 @@
 
 ## Test 1 - Add a verb, correct one conjugated form, and see it on the flashcard [sanity]
 Viewport: desktop
-Covers: category creation, verb creation triggering automatic conjugation generation, flashcard register/tense/negation switcher, manual correction of a single generated form, persistence after reload, AI example sentence on the flashcard back
-Description: Verifies that adding a verb auto-generates its conjugations and an example sentence, that switching register/tense/negation on the flashcard changes what is displayed, and that a manually corrected form is saved and shown both in word management and on the flashcard.
+Covers: fixed category navigation, verb creation triggering automatic conjugation generation, flashcard register/tense/negation switcher, manual correction of a single generated form, persistence after reload, AI example sentence on the flashcard back
+Description: Verifies that opening one of the app's built-in categories, adding a verb, auto-generates its conjugations and an example sentence, that switching register/tense/negation on the flashcard changes what is displayed, and that a manually corrected form is saved and shown both in word management and on the flashcard.
 
 Steps:
-1. On the main menu, click "Nouvelle catégorie", type "Verbes" and confirm creation
-2. Open "Verbes", go to "Gérer les mots" then "Ajouter un mot": Korean word "가다", pronunciation "gada", translation "aller", then submit and wait for the add to finish
+1. On the main menu, open the "Verbes" category card
+2. Go to "Gérer les mots" then "Ajouter un mot": Korean word "가다", pronunciation "gada", translation "aller", then submit and wait for the add to finish
 3. Go to the "Verbes" flashcard view and note the Korean word shown on the front of the card
 4. Use the "Temps" switcher below the card to select "Présent"
 5. Click the card to flip it
@@ -18,29 +18,26 @@ Steps:
 
 Expected: In step 4, switching to "Présent" changes the Korean word shown on the card to something different from what was shown in step 3. In step 5, flipping the card reveals the French translation "aller" plus a short Korean example sentence with its own translation underneath. After step 7 the correction is saved. After the refresh in step 8, the "Familier" / "Présent" / "Affirmatif" conjugation still shows "테스트폼" / "tesuteupom". In step 9, the flashcard front also shows "테스트폼" for that same combination.
 
-## Test 2 - Delete a category and cascade-delete its words
+## Test 2 - Reset all data from Settings
 Viewport: desktop
-Covers: destructive-action confirmation, category deletion, cascade delete of words, persistence after reload
+Covers: destructive-action confirmation, global data wipe across all categories, persistence after reload
 
 Setup:
-1. Create a category named "Adjectifs"
-2. Open "Adjectifs", go to "Gérer les mots" then "Ajouter un mot", and add the word "크다" / "keuda" / "être grand"
+1. Open "Adjectifs", go to "Gérer les mots" then "Ajouter un mot", and add the word "크다" / "keuda" / "être grand"
 
-Description: Verifies that deleting a category requires confirmation and permanently removes it together with its words.
+Description: Verifies that the Settings panel's "Tout effacer" action requires confirmation and permanently wipes every word in every category.
 
 Steps:
-1. From the main menu, click the delete icon on the "Adjectifs" category card
-2. Confirm the deletion in the confirmation dialog
-3. Refresh the page
+1. From the main menu, click the settings (gear) icon in the header
+2. Click "Tout effacer"
+3. Confirm the destructive action in the confirmation dialog
+4. Refresh the page
 
-Expected: "Adjectifs" no longer appears in the category menu after the refresh.
+Expected: The "Adjectifs" category card shows 0 mots immediately after the reset, and opening "Adjectifs" shows an empty word list, both before and after the refresh.
 
 ## Test 3 - Reject an incomplete manual word on mobile
 Viewport: mobile
-Covers: required-field validation, invalid-write guardrail
-
-Setup:
-1. Create a category named "Noms"
+Covers: fixed category navigation, required-field validation, invalid-write guardrail
 
 Description: Verifies invalid input is blocked without creating a record.
 
@@ -52,11 +49,10 @@ Expected: A validation message is visible and no word is added to "Noms".
 
 ## Test 4 - Warn about a duplicate word on manual add
 Viewport: desktop
-Covers: duplicate detection guardrail, term index lookup, force-add override
+Covers: fixed category navigation, duplicate detection guardrail, term index lookup, force-add override
 
 Setup:
-1. Create a category named "Particules"
-2. Open "Particules", go to "Gérer les mots" then "Ajouter un mot", and add the word "은/는" / "eun/neun" / "particule de thème"
+1. Open "Particules", go to "Gérer les mots" then "Ajouter un mot", and add the word "은/는" / "eun/neun" / "particule de thème"
 
 Description: Verifies that adding a word that already exists elsewhere surfaces a duplicate warning instead of silently creating a second copy.
 
@@ -98,7 +94,7 @@ Covers: theme toggle, per-device preference persistence across reload
 Description: Verifies the dark mode toggle switches the interface's color scheme and that the choice survives a page reload.
 
 Steps:
-1. On the main menu, click the theme toggle button in the top-right corner of the header
+1. On the main menu, click the theme toggle button in the header
 2. Refresh the page
 
 Expected: Immediately after the click the page switches to a dark background/color scheme and the toggle button now shows a sun icon (indicating dark mode is active); after the reload the page still shows the dark color scheme.

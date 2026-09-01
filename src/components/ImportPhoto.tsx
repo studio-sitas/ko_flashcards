@@ -213,23 +213,22 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                                     className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
                                                     placeholder="Traduction"
                                                 />
-                                                <input
+                                                <select
                                                     value={c.suggestedCategory}
                                                     onChange={(e) => updateCandidate(i, { suggestedCategory: e.target.value })}
-                                                    list="categories-datalist"
                                                     className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
-                                                    placeholder="Catégorie"
-                                                />
+                                                >
+                                                    {categories.map((cat) => (
+                                                        <option key={cat.slug} value={cat.name}>
+                                                            {cat.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         </div>
                                     </li>
                                 ))}
                             </ul>
-                            <datalist id="categories-datalist">
-                                {categories.map((c) => (
-                                    <option key={c.slug} value={c.name} />
-                                ))}
-                            </datalist>
                             <button
                                 onClick={submit}
                                 disabled={includedCount === 0}

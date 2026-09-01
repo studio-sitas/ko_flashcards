@@ -42,13 +42,8 @@ export async function fetchCategories(): Promise<CategorySummary[]> {
     return data as CategorySummary[];
 }
 
-export async function createCategory(name: string): Promise<{ id: string; name: string; slug: string }> {
-    const { data } = await api.post('/api/categories', { name });
-    return data.category as { id: string; name: string; slug: string };
-}
-
-export async function deleteCategory(slug: string): Promise<void> {
-    await api.delete(`/api/categories/${encodeURIComponent(slug)}`);
+export async function resetAllData(): Promise<void> {
+    await api.post('/api/reset', {});
 }
 
 export async function fetchWords(slug: string): Promise<Word[]> {

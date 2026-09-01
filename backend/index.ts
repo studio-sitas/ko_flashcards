@@ -4,6 +4,17 @@ const REGISTERS = ['ultra-formel', 'poli', 'familier'] as const;
 const CONJUGATIONS = ['infinitif', 'present', 'passe', 'futur'] as const;
 const NEGATIONS = ['affirmatif', 'negatif'] as const;
 
+const FIXED_CATEGORIES: Array<{ name: string; slug: string }> = [
+    { name: 'Noms', slug: 'noms' },
+    { name: 'Verbes', slug: 'verbes' },
+    { name: 'Adjectifs', slug: 'adjectifs' },
+    { name: 'Adverbes', slug: 'adverbes' },
+    { name: 'Particules', slug: 'particules' },
+    { name: 'Chiffres', slug: 'chiffres' },
+    { name: 'Expressions', slug: 'expressions' },
+    { name: 'Autre', slug: 'autre' },
+];
+
 interface VerbFormValue {
     term: string;
     pronunciation: string;
@@ -13,12 +24,6 @@ interface ExampleSentence {
     term: string;
     pronunciation: string;
     translation: string;
-}
-
-interface CategoryRecord {
-    name: string;
-    slug: string;
-    createdAt: number;
 }
 
 interface WordRecord {
@@ -49,7 +54,16 @@ function slugify(name: string): string {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-+|-+$)/g, '');
-    return base || 'categorie';
+    return base || 'autre';
+}
+
+function resolveCategory(nameInput: string): { name: string; slug: string } {
+    const normalized = slugify(nameInput);
+    return FIXED_CATEGORIES.find((c) => c.slug === normalized) || FIXED_CATEGORIES[FIXED_CATEGORIES.length - 1];
+}
+
+function getFixedCategoryBySlug(slug: string): { name: string; slug: string } | undefined {
+    return FIXED_CATEGORIES.find((c) => c.slug === slug);
 }
 
 function normalizeTerm(term: string): string {
@@ -158,27 +172,6 @@ async function generateExampleSentence(
     };
 }
 
-async function listCategoryRecords(): Promise<Array<CategoryRecord & { id: string }>> {
-    const { items } = await db.list<CategoryRecord>('categories', { limit: 200 });
-    return items;
-}
-
-async function getCategoryBySlug(slug: string): Promise<(CategoryRecord & { id: string }) | undefined> {
-    const items = await listCategoryRecords();
-    return items.find((c) => c.slug === slug);
-}
-
-async function ensureCategory(name: string): Promise<{ id: string; name: string; slug: string }> {
-    const trimmed = name.trim();
-    const slug = slugify(trimmed);
-    const items = await listCategoryRecords();
-    const existing = items.find((c) => c.slug === slug);
-    if (existing) return { id: existing.id, name: existing.name, slug: existing.slug };
-    const [id] = await db.add('categories', [{ name: trimmed, slug, createdAt: Date.now() }]);
-    if (!id) throw new Error('create-category-failed');
-    return { id, name: trimmed, slug };
-}
-
 async function loadTermIndex(): Promise<Array<TermIndexRecord & { id: string }>> {
     let items: Array<TermIndexRecord & { id: string }> = [];
     let nextToken: string | undefined;
@@ -196,8 +189,8 @@ async function addWordRecord(
     term: string,
     pronunciation: string,
     translation: string
-): Promise<{ id: string; category: { id: string; name: string; slug: string } }> {
-    const category = await ensureCategory(categoryName);
+): Promise<{ id: string; category: { name: string; slug: string } }> {
+    const category = resolveCategory(categoryName);
     const createdAt = Date.now();
     const [wordId] = await db.add(wordsTable(category.slug), [{ term, pronunciation, translation, createdAt }]);
     if (!wordId) throw new Error('add-word-failed');
@@ -220,46 +213,39 @@ export const handler = router({
 
     'GET /api/categories': [
         async () => {
-            const categories = await listCategoryRecords();
             const withCounts = await Promise.all(
-                categories.map(async (c) => {
+                FIXED_CATEGORIES.map(async (c) => {
                     const { items } = await db.list(wordsTable(c.slug), { limit: 1000 });
-                    return { id: c.id, name: c.name, slug: c.slug, count: items.length };
+                    return { id: c.slug, name: c.name, slug: c.slug, count: items.length };
                 })
             );
-            withCounts.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
             return json(withCounts);
         },
     ],
 
-    'POST /api/categories': [
-        async ({ body }) => {
-            const b = (body || {}) as { name?: string };
-            const name = (b.name || '').trim();
-            if (!name) return error('Le nom de la catégorie est requis', 400);
-            const category = await ensureCategory(name);
-            return json({ category });
-        },
-    ],
-
-    'DELETE /api/categories/:slug': [
-        async ({ params }) => {
-            const cat = await getCategoryBySlug(params.slug);
-            if (!cat) return error('Catégorie introuvable', 404);
-            const { items: words } = await db.list<WordRecord>(wordsTable(params.slug), { limit: 1000 });
-            const indexIds = words.map((w) => w.indexId).filter((v): v is string => !!v);
-            if (indexIds.length) await db.delete('term_index', indexIds);
-            const wordIds = words.map((w) => (w as unknown as { id: string }).id);
-            if (wordIds.length) await db.delete(wordsTable(params.slug), wordIds);
-            await db.delete('categories', [cat.id]);
-            return json({ deleted: true });
+    'POST /api/reset': [
+        async () => {
+            for (const cat of FIXED_CATEGORIES) {
+                const { items } = await db.list(wordsTable(cat.slug), { limit: 1000 });
+                const ids = items.map((w) => (w as unknown as { id: string }).id);
+                if (ids.length) await db.delete(wordsTable(cat.slug), ids);
+            }
+            let nextToken: string | undefined;
+            for (let i = 0; i < 20; i++) {
+                const page = await db.list('term_index', { limit: 500, nextToken });
+                const ids = page.items.map((w) => (w as unknown as { id: string }).id);
+                if (ids.length) await db.delete('term_index', ids);
+                if (!page.nextToken) break;
+                nextToken = page.nextToken;
+            }
+            return json({ reset: true });
         },
     ],
 
     'GET /api/words/:slug': [
         async ({ params }) => {
-            const cat = await getCategoryBySlug(params.slug);
-            const isVerbs = cat ? isVerbsCategoryName(cat.name) : isVerbsCategoryName(params.slug);
+            const cat = getFixedCategoryBySlug(params.slug);
+            const isVerbs = cat ? isVerbsCategoryName(cat.name) : false;
             const categoryName = cat ? cat.name : params.slug;
             const { items } = await db.list<WordRecord>(wordsTable(params.slug), { limit: 1000 });
             const withDefaults: Array<WordRecord & { id: string }> = [];
@@ -338,7 +324,7 @@ export const handler = router({
             const pronunciation = (b.pronunciation ?? existing.pronunciation ?? '').trim();
             const translation = (b.translation ?? existing.translation).trim();
             if (!term || !translation) return error('Le mot et la traduction sont requis', 400);
-            const cat = await getCategoryBySlug(params.slug);
+            const cat = getFixedCategoryBySlug(params.slug);
             const categoryName = cat ? cat.name : params.slug;
             const isVerbs = isVerbsCategoryName(categoryName);
             const contentChanged = term !== existing.term || translation !== existing.translation;
@@ -421,7 +407,7 @@ export const handler = router({
         async ({ params }) => {
             const [existing] = await db.get<WordRecord>(wordsTable(params.slug), [params.id]);
             if (!existing) return error('Mot introuvable', 404);
-            const cat = await getCategoryBySlug(params.slug);
+            const cat = getFixedCategoryBySlug(params.slug);
             const example = await generateExampleSentence(existing.term, existing.translation, cat ? cat.name : params.slug);
             const [ok] = await db.update(wordsTable(params.slug), [{ id: params.id, record: { ...existing, example } }]);
             if (!ok) return error('Échec de la régénération', 500);
@@ -451,7 +437,7 @@ export const handler = router({
                     system:
                         "Tu es un assistant qui aide un francophone à réviser le coréen à partir de photos de manuel scolaire.",
                     prompt:
-                        "Cette image est une page de manuel de coréen contenant un lexique organisé en tableau ou en colonnes. Chaque ligne comporte : le mot en hangeul (coréen), sa romanisation/prononciation, et sa traduction en français. Le lexique peut être découpé en sections avec des titres comme \"Noms\", \"Verbes\", \"Particules\", \"Adjectifs\" : utilise le titre de la section la plus proche au-dessus de chaque ligne comme catégorie suggérée (recopie ce titre en français, par exemple \"Noms\", \"Verbes\", \"Particules\", \"Adjectifs\"). S'il n'y a aucun titre de section identifiable pour un mot, mets \"Autre\" comme catégorie." +
+                        "Cette image est une page de manuel de coréen contenant un lexique organisé en tableau ou en colonnes. Chaque ligne comporte : le mot en hangeul (coréen), sa romanisation/prononciation, et sa traduction en français. Le lexique peut être découpé en sections avec des titres. Choisis la catégorie suggérée pour chaque ligne UNIQUEMENT parmi cette liste fermée : \"Noms\", \"Verbes\", \"Adjectifs\", \"Adverbes\", \"Particules\", \"Chiffres\", \"Expressions\", \"Autre\". Utilise le titre de section le plus proche au-dessus de chaque ligne pour choisir la catégorie la plus proche de cette liste ; si rien ne correspond clairement, mets \"Autre\"." +
                         (b.categoryHint
                             ? ` Si aucune section n'est identifiable pour un mot, utilise plutôt "${b.categoryHint}" comme catégorie suggérée.`
                             : '') +
@@ -468,7 +454,10 @@ export const handler = router({
                                         term: { type: 'string' },
                                         pronunciation: { type: 'string' },
                                         translation: { type: 'string' },
-                                        suggestedCategory: { type: 'string' },
+                                        suggestedCategory: {
+                                            type: 'string',
+                                            enum: FIXED_CATEGORIES.map((c) => c.name),
+                                        },
                                     },
                                     required: ['term', 'translation'],
                                 },
@@ -492,12 +481,15 @@ export const handler = router({
             const rawWords = Array.isArray(data.words) ? data.words : [];
             const index = await loadTermIndex();
             const candidates = rawWords
-                .map((w) => ({
-                    term: (w.term || '').trim(),
-                    pronunciation: (w.pronunciation || '').trim(),
-                    translation: (w.translation || '').trim(),
-                    suggestedCategory: (w.suggestedCategory || b.categoryHint || 'Autre').trim(),
-                }))
+                .map((w) => {
+                    const cat = resolveCategory(w.suggestedCategory || b.categoryHint || 'Autre');
+                    return {
+                        term: (w.term || '').trim(),
+                        pronunciation: (w.pronunciation || '').trim(),
+                        translation: (w.translation || '').trim(),
+                        suggestedCategory: cat.name,
+                    };
+                })
                 .filter((w) => w.term && w.translation)
                 .map((w) => {
                     const normalized = normalizeTerm(w.term);

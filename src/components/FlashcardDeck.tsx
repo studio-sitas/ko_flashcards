@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Shuffle, ChevronLeft, ChevronRight, ArrowLeft, ListChecks } from 'lucide-react';
-import type { Word } from '../lib/api';
+import { Shuffle, ChevronLeft, ChevronRight, ArrowLeft, ListChecks, Loader2 } from 'lucide-react';
+import { type Word, fetchWords } from '../lib/api';
 import {
     CONJUGATION_OPTIONS,
     DEFAULT_CONJUGATION,
@@ -34,14 +34,16 @@ function clamp01(n: number): number {
 }
 
 interface Props {
-    words: Word[];
+    slug: string;
     categoryName: string;
     onBack: () => void;
     onManage: () => void;
 }
 
-export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) {
-    const [order, setOrder] = useState<Word[]>(words);
+export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
+    const [words, setWords] = useState<Word[] | null>(null);
+    const [loadError, setLoadError] = useState(false);
+    const [order, setOrder] = useState<Word[]>([]);
     const [index, setIndex] = useState(0);
     const [flipped, setFlipped] = useState(false);
     const [dragX, setDragX] = useState(0);
@@ -56,6 +58,26 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
     orderRef.current = order;
 
     useEffect(() => {
+        let cancelled = false;
+        setWords(null);
+        setLoadError(false);
+        fetchWords(slug)
+            .then((ws) => {
+                if (!cancelled) setWords(ws);
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setWords([]);
+                    setLoadError(true);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [slug]);
+
+    useEffect(() => {
+        if (words === null) return;
         setOrder(words);
         setIndex(0);
         setFlipped(false);
@@ -105,6 +127,22 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [animating]);
 
+    if (words === null) {
+        return (
+            <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-900">
+                <header className="flex items-center px-4 py-3">
+                    <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
+                        <ArrowLeft size={22} />
+                    </button>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100 ml-1">{categoryName}</p>
+                </header>
+                <div className="flex-1 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                    <Loader2 className="animate-spin" size={28} />
+                </div>
+            </div>
+        );
+    }
+
     if (order.length === 0) {
         return (
             <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-900">
@@ -116,7 +154,9 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                 </header>
                 <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
                     <p className="text-lg text-slate-600 dark:text-slate-300 mb-4">
-                        Aucun mot dans cette catégorie pour le moment.
+                        {loadError
+                            ? 'Impossible de charger les mots pour le moment.'
+                            : 'Aucun mot dans cette catégorie pour le moment.'}
                     </p>
                     <button onClick={onManage} className="px-4 py-2 rounded-full bg-emerald-600 text-white font-medium">
                         Ajouter un mot
