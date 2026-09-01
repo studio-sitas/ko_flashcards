@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Pencil, Trash2, Plus, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { type Word, deleteWord, fetchWords, updateWord } from '../lib/api';
+import { ArrowLeft, Pencil, Trash2, Plus, Check, X, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { type Word, deleteWord, fetchWords, regenerateExample, updateWord } from '../lib/api';
 import { VerbFormsPanel } from './VerbFormsPanel';
 import { isVerbCategory } from '../lib/verbs';
 
@@ -24,6 +24,7 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
     const [draft, setDraft] = useState<Draft>({ term: '', pronunciation: '', translation: '' });
     const [confirmDelete, setConfirmDelete] = useState<Word | null>(null);
     const [errorMsg, setErrorMsg] = useState('');
+    const [regeneratingExampleId, setRegeneratingExampleId] = useState<string | null>(null);
     const isVerbs = isVerbCategory(categoryName);
 
     const load = async () => {
@@ -73,6 +74,19 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
 
     const updateWordInPlace = (updated: Word) => {
         setWords((ws) => (ws ? ws.map((w) => (w.id === updated.id ? updated : w)) : ws));
+    };
+
+    const handleRegenerateExample = async (w: Word) => {
+        setRegeneratingExampleId(w.id);
+        setErrorMsg('');
+        try {
+            const res = await regenerateExample(slug, w.id);
+            updateWordInPlace({ ...w, example: res.example });
+        } catch {
+            setErrorMsg("Échec de la régénération de l'exemple.");
+        } finally {
+            setRegeneratingExampleId(null);
+        }
     };
 
     return (
@@ -143,8 +157,21 @@ export function WordList({ slug, categoryName, onBack, onAdd }: Props) {
                                                 <span className="text-slate-400 dark:text-slate-500 font-normal">· {w.pronunciation}</span>
                                             </p>
                                             <p className="text-sm text-slate-500 dark:text-slate-400">{w.translation}</p>
+                                            {w.example && (
+                                                <p className="text-xs text-slate-400 dark:text-slate-500 italic mt-1">
+                                                    {w.example.term} — {w.example.translation}
+                                                </p>
+                                            )}
                                         </button>
                                         <div className="flex gap-1 shrink-0 items-center">
+                                            <button
+                                                onClick={() => handleRegenerateExample(w)}
+                                                disabled={regeneratingExampleId === w.id}
+                                                aria-label={`Régénérer la phrase d'exemple pour ${w.term}`}
+                                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 disabled:opacity-50"
+                                            >
+                                                <RefreshCw size={16} className={regeneratingExampleId === w.id ? 'animate-spin' : ''} />
+                                            </button>
                                             {isVerbs && (
                                                 <button
                                                     onClick={() => setExpandedId(expandedId === w.id ? null : w.id)}

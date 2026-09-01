@@ -12,6 +12,12 @@ export interface VerbForm {
     pronunciation: string;
 }
 
+export interface ExampleSentence {
+    term: string;
+    pronunciation: string;
+    translation: string;
+}
+
 export interface Word {
     id: string;
     term: string;
@@ -19,6 +25,7 @@ export interface Word {
     translation: string;
     forms?: Record<string, VerbForm>;
     formsGeneratedAt?: number;
+    example?: ExampleSentence | null;
 }
 
 export interface Candidate {
@@ -87,6 +94,11 @@ export async function correctVerbForm(
     params: { registre: string; conjugaison: string; negation: string; term: string; pronunciation: string }
 ): Promise<{ forms: Record<string, VerbForm> }> {
     const { data } = await api.put(`/api/words/${encodeURIComponent(slug)}/${id}/form`, params);
+    return data;
+}
+
+export async function regenerateExample(slug: string, id: string): Promise<{ example: ExampleSentence | null }> {
+    const { data } = await api.post(`/api/words/${encodeURIComponent(slug)}/${id}/regenerate-example`, {});
     return data;
 }
 

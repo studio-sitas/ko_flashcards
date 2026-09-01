@@ -17,8 +17,8 @@ import {
 import { ChoiceButtons } from './ChoiceButtons';
 
 const SWIPE_THRESHOLD = 80;
-const EXIT_DISTANCE = 480;
-const TRANSITION_MS = 240;
+const EXIT_DISTANCE = 420;
+const TRANSITION_MS = 260;
 
 function shuffleArray<T>(arr: T[]): T[] {
     const copy = [...arr];
@@ -27,6 +27,10 @@ function shuffleArray<T>(arr: T[]): T[] {
         [copy[i], copy[j]] = [copy[j], copy[i]];
     }
     return copy;
+}
+
+function clamp01(n: number): number {
+    return Math.max(0, Math.min(1, n));
 }
 
 interface Props {
@@ -77,12 +81,11 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                 return next;
             });
             setInstant(true);
-            setDragX(-exitX);
+            setDragX(0);
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     setInstant(false);
-                    setDragX(0);
-                    window.setTimeout(() => setAnimating(false), TRANSITION_MS);
+                    setAnimating(false);
                 });
             });
         }, TRANSITION_MS);
@@ -130,6 +133,32 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
     const displayPronunciation = form?.pronunciation || current.pronunciation;
     const stillGenerating = isVerbs && !current.forms;
 
+    const direction = dragX < 0 ? 1 : dragX > 0 ? -1 : 0;
+    const previewIndex =
+        direction === 0
+            ? null
+            : (() => {
+                  const len = order.length;
+                  const next = index + direction;
+                  if (next < 0) return len - 1;
+                  if (next >= len) return 0;
+                  return next;
+              })();
+    const previewWord = previewIndex !== null ? order[previewIndex] : null;
+    const previewX = direction === 0 ? 0 : dragX + (direction === 1 ? EXIT_DISTANCE : -EXIT_DISTANCE);
+
+    const exitProgress = clamp01(Math.abs(dragX) / EXIT_DISTANCE);
+    const currentOpacity = 1 - exitProgress * 0.7;
+    const currentBlur = exitProgress * 4;
+    const arriveProgress = 1 - clamp01(Math.abs(previewX) / EXIT_DISTANCE);
+    const previewOpacity = arriveProgress;
+    const previewBlur = (1 - arriveProgress) * 4;
+
+    const cardTransition =
+        dragging || instant
+            ? 'none'
+            : `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${TRANSITION_MS}ms ease, filter ${TRANSITION_MS}ms ease`;
+
     const handleStart = (clientX: number) => {
         if (animating) return;
         startX.current = clientX;
@@ -173,12 +202,7 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
 
             <div className="flex-1 flex items-center justify-center px-6 pb-2 overflow-hidden">
                 <div
-                    className="w-full max-w-sm select-none touch-pan-y"
-                    style={{
-                        transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
-                        transition:
-                            dragging || instant ? 'none' : `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-                    }}
+                    className="relative w-full max-w-sm aspect-[3/4] select-none touch-pan-y"
                     onMouseDown={(e) => handleStart(e.clientX)}
                     onMouseMove={(e) => handleMove(e.clientX)}
                     onMouseUp={handleEnd}
@@ -187,39 +211,77 @@ export function FlashcardDeck({ words, categoryName, onBack, onManage }: Props) 
                     onTouchMove={(e) => handleMove(e.touches[0].clientX)}
                     onTouchEnd={handleEnd}
                 >
-                    <button
-                        type="button"
-                        onClick={() => setFlipped((f) => !f)}
-                        className="w-full aspect-[3/4] [perspective:1200px] block"
-                        aria-label="Retourner la carte pour voir la traduction"
-                    >
+                    {previewWord && (
                         <div
-                            className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d]"
-                            style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                            className="absolute inset-0 z-0"
+                            style={{
+                                transform: `translateX(${previewX}px)`,
+                                opacity: previewOpacity,
+                                filter: `blur(${previewBlur}px)`,
+                                transition: cardTransition,
+                                willChange: 'transform, opacity, filter',
+                            }}
                         >
-                            <div className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
+                            <div className="w-full h-full rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8">
                                 <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
-                                    {displayTerm}
+                                    {previewWord.term}
                                 </p>
-                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{displayPronunciation}</p>
-                                {stillGenerating && (
-                                    <p className="text-xs text-amber-600 dark:text-amber-400">
-                                        Conjugaisons en cours de génération…
-                                    </p>
-                                )}
-                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
-                            </div>
-                            <div className="absolute inset-0 rounded-3xl bg-emerald-600 dark:bg-emerald-700 shadow-xl flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                <p className="text-3xl font-bold text-white text-center break-words">
-                                    {current.translation}
-                                    {isVerbs && negation === 'negatif' ? ' (négatif)' : ''}
-                                </p>
-                                <p className="text-sm text-emerald-100">
-                                    {displayTerm} · {displayPronunciation}
-                                </p>
+                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{previewWord.pronunciation}</p>
                             </div>
                         </div>
-                    </button>
+                    )}
+
+                    <div
+                        className="absolute inset-0 z-10"
+                        style={{
+                            transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
+                            opacity: currentOpacity,
+                            filter: `blur(${currentBlur}px)`,
+                            transition: cardTransition,
+                            willChange: 'transform, opacity, filter',
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setFlipped((f) => !f)}
+                            className="w-full h-full [perspective:1200px] block"
+                            aria-label="Retourner la carte pour voir la traduction"
+                        >
+                            <div
+                                className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d]"
+                                style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                            >
+                                <div className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
+                                    <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
+                                        {displayTerm}
+                                    </p>
+                                    <p className="text-lg text-emerald-600 dark:text-emerald-400">{displayPronunciation}</p>
+                                    {stillGenerating && (
+                                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                                            Conjugaisons en cours de génération…
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
+                                </div>
+                                <div className="absolute inset-0 rounded-3xl bg-emerald-600 dark:bg-emerald-700 shadow-xl flex flex-col items-center justify-center gap-2 p-6 overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                    <p className="text-3xl font-bold text-white text-center break-words">
+                                        {current.translation}
+                                        {isVerbs && negation === 'negatif' ? ' (négatif)' : ''}
+                                    </p>
+                                    <p className="text-sm text-emerald-100">
+                                        {displayTerm} · {displayPronunciation}
+                                    </p>
+                                    {current.example && (
+                                        <div className="mt-2 pt-3 border-t border-emerald-400/40 w-full text-center">
+                                            <p className="text-sm text-emerald-50 italic break-words">{current.example.term}</p>
+                                            <p className="text-xs text-emerald-100/80 mt-0.5">{current.example.pronunciation}</p>
+                                            <p className="text-xs text-emerald-100/80">{current.example.translation}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
 

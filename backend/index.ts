@@ -9,6 +9,12 @@ interface VerbFormValue {
     pronunciation: string;
 }
 
+interface ExampleSentence {
+    term: string;
+    pronunciation: string;
+    translation: string;
+}
+
 interface CategoryRecord {
     name: string;
     slug: string;
@@ -23,6 +29,7 @@ interface WordRecord {
     indexId?: string;
     forms?: Record<string, VerbFormValue>;
     formsGeneratedAt?: number;
+    example?: ExampleSentence | null;
 }
 
 interface TermIndexRecord {
@@ -114,6 +121,43 @@ async function generateVerbForms(term: string, translation: string): Promise<Rec
     return map;
 }
 
+async function generateExampleSentence(
+    term: string,
+    translation: string,
+    categoryName: string
+): Promise<ExampleSentence | null> {
+    let result;
+    try {
+        result = await ai.extract({
+            system: "Tu es un assistant qui aide un francophone à apprendre le coréen avec des phrases d'exemple simples.",
+            prompt:
+                `Le mot coréen "${term}" (catégorie : ${categoryName}) signifie "${translation}" en français. ` +
+                "Rédige UNE phrase courte et naturelle en coréen, de niveau débutant à intermédiaire, qui utilise ce mot. " +
+                "Donne la phrase en hangeul, sa romanisation phonétique simple lisible par un francophone, et sa traduction en français.",
+            schema: {
+                type: 'object',
+                properties: {
+                    term: { type: 'string' },
+                    pronunciation: { type: 'string' },
+                    translation: { type: 'string' },
+                },
+                required: ['term', 'translation'],
+            },
+            maxTokens: 512,
+            thinkingMode: 'FAST',
+        });
+    } catch {
+        return null;
+    }
+    const data = (result.data || {}) as { term?: string; pronunciation?: string; translation?: string };
+    if (!data.term || !data.translation) return null;
+    return {
+        term: data.term.trim(),
+        pronunciation: (data.pronunciation || '').trim(),
+        translation: data.translation.trim(),
+    };
+}
+
 async function listCategoryRecords(): Promise<Array<CategoryRecord & { id: string }>> {
     const { items } = await db.list<CategoryRecord>('categories', { limit: 200 });
     return items;
@@ -166,6 +210,7 @@ async function addWordRecord(
         record.forms = await generateVerbForms(term, translation);
         record.formsGeneratedAt = Date.now();
     }
+    record.example = await generateExampleSentence(term, translation, category.name);
     await db.update(wordsTable(category.slug), [{ id: wordId, record }]);
     return { id: wordId, category };
 }
@@ -215,18 +260,28 @@ export const handler = router({
         async ({ params }) => {
             const cat = await getCategoryBySlug(params.slug);
             const isVerbs = cat ? isVerbsCategoryName(cat.name) : isVerbsCategoryName(params.slug);
+            const categoryName = cat ? cat.name : params.slug;
             const { items } = await db.list<WordRecord>(wordsTable(params.slug), { limit: 1000 });
             const withDefaults: Array<WordRecord & { id: string }> = [];
             for (const item of items) {
                 const { id, ...rest } = item as WordRecord & { id: string };
                 let forms = rest.forms;
                 let formsGeneratedAt = rest.formsGeneratedAt;
+                let example = rest.example;
+                let needsUpdate = false;
                 if (isVerbs && !forms) {
                     forms = await generateVerbForms(rest.term, rest.translation);
                     formsGeneratedAt = Date.now();
-                    await db.update(wordsTable(params.slug), [{ id, record: { ...rest, forms, formsGeneratedAt } }]);
+                    needsUpdate = true;
                 }
-                withDefaults.push({ id, ...rest, forms: forms || {}, formsGeneratedAt });
+                if (!example) {
+                    example = await generateExampleSentence(rest.term, rest.translation, categoryName);
+                    needsUpdate = true;
+                }
+                if (needsUpdate) {
+                    await db.update(wordsTable(params.slug), [{ id, record: { ...rest, forms, formsGeneratedAt, example } }]);
+                }
+                withDefaults.push({ id, ...rest, forms: forms || {}, formsGeneratedAt, example });
             }
             const sorted = [...withDefaults].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             return json({ words: sorted });
@@ -266,6 +321,7 @@ export const handler = router({
                     translation,
                     forms: saved?.forms || {},
                     formsGeneratedAt: saved?.formsGeneratedAt,
+                    example: saved?.example,
                     category: category.name,
                     slug: category.slug,
                 },
@@ -283,15 +339,20 @@ export const handler = router({
             const translation = (b.translation ?? existing.translation).trim();
             if (!term || !translation) return error('Le mot et la traduction sont requis', 400);
             const cat = await getCategoryBySlug(params.slug);
-            const isVerbs = cat ? isVerbsCategoryName(cat.name) : isVerbsCategoryName(params.slug);
-            const termChanged = term !== existing.term;
+            const categoryName = cat ? cat.name : params.slug;
+            const isVerbs = isVerbsCategoryName(categoryName);
+            const contentChanged = term !== existing.term || translation !== existing.translation;
             let forms = existing.forms;
             let formsGeneratedAt = existing.formsGeneratedAt;
-            if (isVerbs && (termChanged || !forms)) {
+            if (isVerbs && (contentChanged || !forms)) {
                 forms = await generateVerbForms(term, translation);
                 formsGeneratedAt = Date.now();
             }
-            const record: Record<string, unknown> = { ...existing, term, pronunciation, translation };
+            let example = existing.example;
+            if (contentChanged || !example) {
+                example = await generateExampleSentence(term, translation, categoryName);
+            }
+            const record: Record<string, unknown> = { ...existing, term, pronunciation, translation, example };
             if (isVerbs) {
                 record.forms = forms;
                 record.formsGeneratedAt = formsGeneratedAt;
@@ -306,14 +367,14 @@ export const handler = router({
                             term,
                             normalized: normalizeTerm(term),
                             slug: params.slug,
-                            category: cat ? cat.name : params.slug,
+                            category: categoryName,
                             wordId: params.id,
                             createdAt: existing.createdAt || Date.now(),
                         },
                     },
                 ]);
             }
-            return json({ word: { id: params.id, term, pronunciation, translation, forms, formsGeneratedAt } });
+            return json({ word: { id: params.id, term, pronunciation, translation, forms, formsGeneratedAt, example } });
         },
     ],
 
@@ -353,6 +414,18 @@ export const handler = router({
             const [ok] = await db.update(wordsTable(params.slug), [{ id: params.id, record: { ...existing, forms } }]);
             if (!ok) return error('Échec de la mise à jour', 500);
             return json({ forms });
+        },
+    ],
+
+    'POST /api/words/:slug/:id/regenerate-example': [
+        async ({ params }) => {
+            const [existing] = await db.get<WordRecord>(wordsTable(params.slug), [params.id]);
+            if (!existing) return error('Mot introuvable', 404);
+            const cat = await getCategoryBySlug(params.slug);
+            const example = await generateExampleSentence(existing.term, existing.translation, cat ? cat.name : params.slug);
+            const [ok] = await db.update(wordsTable(params.slug), [{ id: params.id, record: { ...existing, example } }]);
+            if (!ok) return error('Échec de la régénération', 500);
+            return json({ example });
         },
     ],
 
