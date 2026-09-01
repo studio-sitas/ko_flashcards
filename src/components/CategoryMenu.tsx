@@ -56,7 +56,7 @@ export function CategoryMenu({ onOpen, onImport, theme, onToggleTheme }: Props) 
                 className="pointer-events-none absolute -z-10 top-40 -left-20 w-64 h-64 rounded-full opacity-30 dark:opacity-20 blur-3xl"
                 style={{ background: 'radial-gradient(circle, #7C9A46 0%, transparent 70%)' }}
             />
-            <div className="relative flex items-start justify-between mb-1 gap-2">
+            <div className="relative flex items-start justify-between mb-6 gap-2">
                 <h1 className="font-display font-bold text-3xl tracking-tight text-ink dark:text-paper">
                     KO<span className="text-gold-500">/</span>CARDS
                 </h1>
@@ -77,9 +77,6 @@ export function CategoryMenu({ onOpen, onImport, theme, onToggleTheme }: Props) 
                     </button>
                 </div>
             </div>
-            <p className="text-sm uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-6">
-                Révise ton vocabulaire coréen
-            </p>
 
             {errorMsg && <p className="text-red-600 dark:text-red-400 text-sm mb-4">{errorMsg}</p>}
 
@@ -107,9 +104,11 @@ export function CategoryMenu({ onOpen, onImport, theme, onToggleTheme }: Props) 
 
             <button
                 onClick={onImport}
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-gold-600 hover:bg-gold-700 text-white px-6 py-3 rounded-full shadow-lg font-medium transition-colors"
+                aria-label="Ajouter des mots par photo"
+                title="Ajouter des mots par photo"
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center w-14 h-14 bg-gold-600 hover:bg-gold-700 text-white rounded-full shadow-lg transition-colors"
             >
-                <Camera size={20} /> Ajouter des mots par photo
+                <Camera size={24} />
             </button>
 
             {showSettings && (

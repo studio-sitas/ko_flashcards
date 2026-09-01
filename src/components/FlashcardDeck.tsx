@@ -268,17 +268,19 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                         >
                             <div className="w-full h-full [perspective:1200px]">
                                 <div className="relative w-full h-full [transform-style:preserve-3d]">
-                                    <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
-                                        <p className="font-display text-4xl font-bold text-ink dark:text-paper text-center break-words">
-                                            {previewDisplayTerm}
-                                        </p>
-                                        <p className="text-xl text-gold-600 dark:text-gold-400">{previewDisplayPronunciation}</p>
-                                        {previewStillGenerating && (
-                                            <p className="text-sm text-amber-600 dark:text-amber-400">
-                                                Conjugaisons en cours de génération…
+                                    <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col p-8 [backface-visibility:hidden]">
+                                        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                                            <p className="font-display text-5xl font-bold text-ink dark:text-paper text-center break-words">
+                                                {previewDisplayTerm}
                                             </p>
-                                        )}
-                                        <p className="text-sm uppercase tracking-wide text-stone-400 dark:text-stone-500 mt-4">
+                                            <p className="text-2xl text-gold-600 dark:text-gold-400">{previewDisplayPronunciation}</p>
+                                            {previewStillGenerating && (
+                                                <p className="text-sm text-amber-600 dark:text-amber-400">
+                                                    Conjugaisons en cours de génération…
+                                                </p>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500 text-center">
                                             Touche pour voir la traduction
                                         </p>
                                     </div>
@@ -309,33 +311,35 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                                 }`}
                                 style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                             >
-                                <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
-                                    <p className="font-display text-4xl font-bold text-ink dark:text-paper text-center break-words">
-                                        {displayTerm}
-                                    </p>
-                                    <p className="text-xl text-gold-600 dark:text-gold-400">{displayPronunciation}</p>
-                                    {stillGenerating && (
-                                        <p className="text-sm text-amber-600 dark:text-amber-400">
-                                            Conjugaisons en cours de génération…
+                                <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col p-8 [backface-visibility:hidden]">
+                                    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                                        <p className="font-display text-5xl font-bold text-ink dark:text-paper text-center break-words">
+                                            {displayTerm}
                                         </p>
-                                    )}
-                                    <p className="text-sm uppercase tracking-wide text-stone-400 dark:text-stone-500 mt-4">
+                                        <p className="text-2xl text-gold-600 dark:text-gold-400">{displayPronunciation}</p>
+                                        {stillGenerating && (
+                                            <p className="text-sm text-amber-600 dark:text-amber-400">
+                                                Conjugaisons en cours de génération…
+                                            </p>
+                                        )}
+                                    </div>
+                                    <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500 text-center">
                                         Touche pour voir la traduction
                                     </p>
                                 </div>
                                 <div className="absolute inset-0 rounded-3xl bg-moss-600 dark:bg-moss-700 shadow-xl flex flex-col items-center justify-center gap-2 p-6 overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                    <p className="font-display text-3xl font-bold text-white text-center break-words">
+                                    <p className="font-display text-4xl font-bold text-white text-center break-words">
                                         {current.translation}
                                         {isVerbs && negation === 'negatif' ? ' (négatif)' : ''}
                                     </p>
-                                    <p className="text-base text-moss-100">
+                                    <p className="text-lg text-moss-100">
                                         {displayTerm} · {displayPronunciation}
                                     </p>
                                     {current.example && (
                                         <div className="mt-2 pt-3 border-t border-moss-400/40 w-full text-center">
-                                            <p className="text-base text-moss-50 italic break-words">{current.example.term}</p>
-                                            <p className="text-sm text-moss-100/80 mt-0.5">{current.example.pronunciation}</p>
-                                            <p className="text-sm text-moss-100/80">{current.example.translation}</p>
+                                            <p className="text-xl text-moss-50 italic break-words">{current.example.term}</p>
+                                            <p className="text-base text-moss-100/80 mt-0.5">{current.example.pronunciation}</p>
+                                            <p className="text-base text-moss-100/80">{current.example.translation}</p>
                                         </div>
                                     )}
                                 </div>
