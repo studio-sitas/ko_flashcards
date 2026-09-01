@@ -178,6 +178,25 @@ async function generateExampleSentence(
     };
 }
 
+// Runs `fn` over `items` with at most `concurrency` in flight at once. Used for
+// the per-word AI calls (verb forms / example sentences) so that importing or
+// opening a category with many words doesn't run them one-by-one — sequential
+// AI calls for 5+ words routinely exceeded the request timeout and surfaced as
+// a network error on the client.
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = new Array(items.length);
+    let next = 0;
+    async function worker() {
+        while (next < items.length) {
+            const i = next++;
+            results[i] = await fn(items[i]);
+        }
+    }
+    const workers = Array.from({ length: Math.max(1, Math.min(concurrency, items.length)) }, () => worker());
+    await Promise.all(workers);
+    return results;
+}
+
 async function loadTermIndex(): Promise<Array<TermIndexRecord & { id: string }>> {
     let items: Array<TermIndexRecord & { id: string }> = [];
     let nextToken: string | undefined;
@@ -254,8 +273,7 @@ export const handler = router({
             const isVerbs = cat ? isVerbsCategoryName(cat.name) : false;
             const categoryName = cat ? cat.name : params.slug;
             const { items } = await db.list<WordRecord>(wordsTable(params.slug), { limit: 1000 });
-            const withDefaults: Array<WordRecord & { id: string }> = [];
-            for (const item of items) {
+            const withDefaults = await mapWithConcurrency(items, 6, async (item) => {
                 const { id, ...rest } = item as WordRecord & { id: string };
                 let forms = rest.forms;
                 let formsGeneratedAt = rest.formsGeneratedAt;
@@ -273,8 +291,8 @@ export const handler = router({
                 if (needsUpdate) {
                     await db.update(wordsTable(params.slug), [{ id, record: { ...rest, forms, formsGeneratedAt, example } }]);
                 }
-                withDefaults.push({ id, ...rest, forms: forms || {}, formsGeneratedAt, example });
-            }
+                return { id, ...rest, forms: forms || {}, formsGeneratedAt, example };
+            });
             const sorted = [...withDefaults].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             return json({ words: sorted });
         },
@@ -513,23 +531,26 @@ export const handler = router({
             };
             const entries = Array.isArray(b.entries) ? b.entries : [];
             if (!entries.length) return error('Aucun mot à ajouter', 400);
-            const added: Array<{ term: string; category: string }> = [];
-            const skipped: Array<{ term: string; reason: string }> = [];
-            for (const e of entries) {
+            const results = await mapWithConcurrency(entries, 6, async (e) => {
                 const term = (e.term || '').trim();
                 const translation = (e.translation || '').trim();
                 const categoryName = (e.categoryName || '').trim();
                 const pronunciation = (e.pronunciation || '').trim();
                 if (!term || !translation || !categoryName) {
-                    skipped.push({ term: term || '(vide)', reason: 'incomplet' });
-                    continue;
+                    return { ok: false as const, term: term || '(vide)', reason: 'incomplet' };
                 }
                 try {
                     const { category } = await addWordRecord(categoryName, term, pronunciation, translation);
-                    added.push({ term, category: category.name });
+                    return { ok: true as const, term, category: category.name };
                 } catch {
-                    skipped.push({ term, reason: 'échec' });
+                    return { ok: false as const, term, reason: 'échec' };
                 }
+            });
+            const added: Array<{ term: string; category: string }> = [];
+            const skipped: Array<{ term: string; reason: string }> = [];
+            for (const r of results) {
+                if (r.ok) added.push({ term: r.term, category: r.category });
+                else skipped.push({ term: r.term, reason: r.reason });
             }
             return json({ added, skipped });
         },
