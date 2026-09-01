@@ -8,11 +8,23 @@ import {
     extractWordsFromImage,
     fetchCategories,
 } from '../lib/api';
+import { ChoiceButtons } from './ChoiceButtons';
+import {
+    CONJUGATION_OPTIONS,
+    DEFAULT_CONJUGATION,
+    DEFAULT_REGISTER,
+    REGISTER_OPTIONS,
+    isVerbCategory,
+    type Conjugation,
+    type Register,
+} from '../lib/verbs';
 
 type Step = 'select' | 'analyzing' | 'review' | 'done' | 'error';
 
 interface EditableCandidate extends Candidate {
     include: boolean;
+    registre: Register;
+    conjugaison: Conjugation;
 }
 
 interface Props {
@@ -38,7 +50,14 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 extractWordsFromImage(prepared.data, prepared.mimeType),
             ]);
             setCategories(cats);
-            setCandidates(result.map((c) => ({ ...c, include: !c.duplicate })));
+            setCandidates(
+                result.map((c) => ({
+                    ...c,
+                    include: !c.duplicate,
+                    registre: DEFAULT_REGISTER,
+                    conjugaison: DEFAULT_CONJUGATION,
+                }))
+            );
             setStep('review');
         } catch {
             setErrorMsg('La lecture de la photo a échoué. Vérifie ta connexion et réessaie.');
@@ -58,6 +77,8 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 pronunciation: c.pronunciation.trim(),
                 translation: c.translation.trim(),
                 categoryName: c.suggestedCategory.trim(),
+                registre: isVerbCategory(c.suggestedCategory) ? c.registre : undefined,
+                conjugaison: isVerbCategory(c.suggestedCategory) ? c.conjugaison : undefined,
             }));
         if (!entries.length) return;
         setStep('analyzing');
@@ -75,18 +96,18 @@ export function ImportPhoto({ onBack, onImported }: Props) {
     const includedCount = candidates.filter((c) => c.include).length;
 
     return (
-        <div className="min-h-screen bg-white px-4 py-6 pb-10">
+        <div className="min-h-screen bg-white dark:bg-slate-900 px-4 py-6 pb-10">
             <header className="flex items-center gap-3 mb-6">
-                <button onClick={onBack} aria-label="Retour" className="p-2 -ml-2 text-slate-600">
+                <button onClick={onBack} aria-label="Retour" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
                     <ArrowLeft size={22} />
                 </button>
-                <h1 className="text-xl font-semibold text-slate-800">Ajouter des mots par photo</h1>
+                <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Ajouter des mots par photo</h1>
             </header>
 
             {step === 'select' && (
                 <div className="flex flex-col items-center text-center gap-4 mt-10">
-                    <Camera size={48} className="text-emerald-600" />
-                    <p className="text-slate-600 max-w-xs">
+                    <Camera size={48} className="text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-slate-600 dark:text-slate-400 max-w-xs">
                         Prends en photo une page de ton livre. L'IA va lire les mots coréens, leur prononciation et leur
                         traduction, et repérer les doublons avant de les ajouter.
                     </p>
@@ -111,7 +132,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
             )}
 
             {step === 'analyzing' && (
-                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500">
+                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500 dark:text-slate-400">
                     <Loader2 className="animate-spin" size={32} />
                     <p>Analyse en cours…</p>
                 </div>
@@ -120,8 +141,11 @@ export function ImportPhoto({ onBack, onImported }: Props) {
             {step === 'error' && (
                 <div className="flex flex-col items-center gap-3 mt-16 text-center">
                     <AlertTriangle className="text-red-500" size={32} />
-                    <p className="text-red-600">{errorMsg}</p>
-                    <button onClick={() => setStep('select')} className="mt-2 px-4 py-2 bg-slate-100 rounded-lg text-slate-700">
+                    <p className="text-red-600 dark:text-red-400">{errorMsg}</p>
+                    <button
+                        onClick={() => setStep('select')}
+                        className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
+                    >
                         Réessayer
                     </button>
                 </div>
@@ -131,14 +155,17 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 <div>
                     {candidates.length === 0 ? (
                         <div className="text-center mt-10">
-                            <p className="text-slate-500 mb-4">Aucun mot n'a été reconnu sur cette photo.</p>
-                            <button onClick={() => setStep('select')} className="px-4 py-2 bg-slate-100 rounded-lg text-slate-700">
+                            <p className="text-slate-500 dark:text-slate-400 mb-4">Aucun mot n'a été reconnu sur cette photo.</p>
+                            <button
+                                onClick={() => setStep('select')}
+                                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
+                            >
                                 Réessayer avec une autre photo
                             </button>
                         </div>
                     ) : (
                         <>
-                            <p className="text-sm text-slate-500 mb-4">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                                 {candidates.length} mot{candidates.length !== 1 ? 's' : ''} détecté
                                 {candidates.length !== 1 ? 's' : ''}. Vérifie, corrige et choisis les mots à ajouter.
                             </p>
@@ -146,7 +173,11 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                 {candidates.map((c, i) => (
                                     <li
                                         key={i}
-                                        className={`border rounded-xl p-3 ${c.duplicate ? 'border-amber-300 bg-amber-50' : 'border-slate-100'}`}
+                                        className={`border rounded-xl p-3 ${
+                                            c.duplicate
+                                                ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30'
+                                                : 'border-slate-100 dark:border-slate-700'
+                                        }`}
                                     >
                                         <div className="flex items-start gap-2">
                                             <input
@@ -158,35 +189,51 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                             />
                                             <div className="flex-1 space-y-1.5">
                                                 {c.duplicate && (
-                                                    <p className="text-xs text-amber-700 flex items-center gap-1">
+                                                    <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
                                                         <AlertTriangle size={12} /> Existe déjà dans « {c.existingCategory} »
                                                     </p>
                                                 )}
                                                 <input
                                                     value={c.term}
                                                     onChange={(e) => updateCandidate(i, { term: e.target.value })}
-                                                    className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm font-medium"
+                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm font-medium"
                                                     placeholder="Mot coréen"
                                                 />
                                                 <input
                                                     value={c.pronunciation}
                                                     onChange={(e) => updateCandidate(i, { pronunciation: e.target.value })}
-                                                    className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
                                                     placeholder="Prononciation"
                                                 />
                                                 <input
                                                     value={c.translation}
                                                     onChange={(e) => updateCandidate(i, { translation: e.target.value })}
-                                                    className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
                                                     placeholder="Traduction"
                                                 />
                                                 <input
                                                     value={c.suggestedCategory}
                                                     onChange={(e) => updateCandidate(i, { suggestedCategory: e.target.value })}
                                                     list="categories-datalist"
-                                                    className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
                                                     placeholder="Catégorie"
                                                 />
+                                                {isVerbCategory(c.suggestedCategory) && (
+                                                    <div className="space-y-2 pt-1">
+                                                        <ChoiceButtons
+                                                            label="Registre"
+                                                            options={REGISTER_OPTIONS}
+                                                            value={c.registre}
+                                                            onChange={(registre) => updateCandidate(i, { registre })}
+                                                        />
+                                                        <ChoiceButtons
+                                                            label="Conjugaison"
+                                                            options={CONJUGATION_OPTIONS}
+                                                            value={c.conjugaison}
+                                                            onChange={(conjugaison) => updateCandidate(i, { conjugaison })}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </li>
@@ -211,12 +258,12 @@ export function ImportPhoto({ onBack, onImported }: Props) {
 
             {step === 'done' && summary && (
                 <div className="flex flex-col items-center text-center gap-3 mt-16">
-                    <CheckCircle2 className="text-emerald-600" size={40} />
-                    <p className="text-slate-700 font-medium">
+                    <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" size={40} />
+                    <p className="text-slate-700 dark:text-slate-200 font-medium">
                         {summary.added} mot{summary.added !== 1 ? 's' : ''} ajouté{summary.added !== 1 ? 's' : ''} !
                     </p>
                     {summary.skipped > 0 && (
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                             {summary.skipped} ignoré{summary.skipped !== 1 ? 's' : ''}.
                         </p>
                     )}
@@ -227,7 +274,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                 setCandidates([]);
                                 setSummary(null);
                             }}
-                            className="px-4 py-2 bg-slate-100 rounded-lg text-slate-700"
+                            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
                         >
                             Ajouter une autre photo
                         </button>

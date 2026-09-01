@@ -5,6 +5,7 @@ import { WordList } from './components/WordList';
 import { AddWordForm } from './components/AddWordForm';
 import { ImportPhoto } from './components/ImportPhoto';
 import { type CategorySummary, type Word, fetchCategories, fetchWords } from './lib/api';
+import { type Theme, applyTheme, getInitialTheme } from './lib/theme';
 
 type Route =
     | { name: 'menu' }
@@ -34,12 +35,19 @@ function App() {
     const [hash, setHash] = useState(window.location.hash);
     const [categories, setCategories] = useState<CategorySummary[]>([]);
     const [words, setWords] = useState<Word[]>([]);
+    const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
     useEffect(() => {
         const onChange = () => setHash(window.location.hash);
         window.addEventListener('hashchange', onChange);
         return () => window.removeEventListener('hashchange', onChange);
     }, []);
+
+    useEffect(() => {
+        applyTheme(theme);
+    }, [theme]);
+
+    const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
     const route = parseHash(hash);
 
@@ -96,7 +104,14 @@ function App() {
         );
     }
 
-    return <CategoryMenu onOpen={(slug) => goto(`/category/${slug}`)} onImport={() => goto('/import')} />;
+    return (
+        <CategoryMenu
+            onOpen={(slug) => goto(`/category/${slug}`)}
+            onImport={() => goto('/import')}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+        />
+    );
 }
 
 export default App;

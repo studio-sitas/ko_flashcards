@@ -1,21 +1,19 @@
 # Tests
 
-## Test 1 - Create a category, add words, and review them as flashcards [sanity]
+## Test 1 - Create a verb with register/conjugation, review it, and edit it [sanity]
 Viewport: desktop
-Covers: category creation, manual word creation (database create), flashcard flip/reveal, next-card navigation, persistence after reload
-Description: Verifies the core revision workflow — creating a category, adding vocabulary manually, and reviewing it as flashcards with translations that persist after a reload.
+Covers: category creation, manual word creation with register/conjugation selection, database create, flashcard flip/reveal showing register+conjugation badges, word edit, persistence after reload
+Description: Verifies the core verb workflow — creating a "Verbes" category, adding a verb with a non-default register/conjugation, reviewing it as a flashcard with the right badges, editing it, and confirming the change persists.
 
 Steps:
 1. On the main menu, click "Nouvelle catégorie", type "Verbes" and confirm creation
-2. Open the "Verbes" category card (this opens the flashcard view with no words yet)
-3. Click "Ajouter un mot", fill in "가다" as the Korean word, "gada" as pronunciation, "aller" as translation, and submit
-4. Click "Ajouter un mot" again, fill in "오다" as the Korean word, "oda" as pronunciation, "venir" as translation, and submit
-5. Go back to the "Verbes" flashcard view
-6. Click the flashcard to flip it and reveal the translation
-7. Click the next-card arrow to move to the following card
-8. Refresh the page and open "Verbes" again
+2. Open "Verbes", go to "Gérer les mots" then "Ajouter un mot"
+3. Fill in "가다" as the Korean word, "gada" as pronunciation, "aller" as translation, select register "Familier" and conjugation "Présent", then submit
+4. Go to the "Verbes" flashcard view and click the card to flip it
+5. Go back to "Gérer les mots", click the edit icon on "가다", change the register to "Poli", and save
+6. Refresh the page and open "Verbes" again
 
-Expected: The first flashcard shows "가다" with "gada" beneath it, and flipping it reveals "aller"; clicking next shows "오다" / "oda" as the second card; after the page refresh, opening "Verbes" still shows both words.
+Expected: After step 4, the front of the card shows "가다" / "gada" with badges "Familier" and "Présent", and flipping reveals "aller". After the edit and refresh, the word list for "Verbes" shows "가다" with badges "Poli" and "Présent" (register changed, conjugation unchanged).
 
 ## Test 2 - Delete a category and cascade-delete its words
 Viewport: desktop
@@ -89,3 +87,15 @@ Steps:
 2. Choose/upload any image file
 
 Expected: A visible error message indicates the photo analysis failed, a retry option is shown, and no candidate word list appears.
+
+## Test 6 - Toggle dark mode and keep it after reload
+Viewport: desktop
+Covers: theme toggle, per-device preference persistence across reload
+
+Description: Verifies the dark mode toggle switches the interface's color scheme and that the choice survives a page reload.
+
+Steps:
+1. On the main menu, click the theme toggle button in the top-right corner of the header
+2. Refresh the page
+
+Expected: Immediately after the click the page switches to a dark background/color scheme and the toggle button now shows a sun icon (indicating dark mode is active); after the reload the page still shows the dark color scheme.

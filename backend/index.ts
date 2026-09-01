@@ -1,5 +1,8 @@
 import { router, json, error, db, ai } from '@appdeploy/sdk';
 
+const DEFAULT_REGISTER = 'poli';
+const DEFAULT_CONJUGATION = 'infinitif';
+
 interface CategoryRecord {
     name: string;
     slug: string;
@@ -12,6 +15,8 @@ interface WordRecord {
     translation: string;
     createdAt: number;
     indexId?: string;
+    registre?: string;
+    conjugaison?: string;
 }
 
 interface TermIndexRecord {
@@ -79,18 +84,22 @@ async function addWordRecord(
     categoryName: string,
     term: string,
     pronunciation: string,
-    translation: string
+    translation: string,
+    registre: string = DEFAULT_REGISTER,
+    conjugaison: string = DEFAULT_CONJUGATION
 ): Promise<{ id: string; category: { id: string; name: string; slug: string } }> {
     const category = await ensureCategory(categoryName);
     const createdAt = Date.now();
-    const [wordId] = await db.add(wordsTable(category.slug), [{ term, pronunciation, translation, createdAt }]);
+    const [wordId] = await db.add(wordsTable(category.slug), [
+        { term, pronunciation, translation, createdAt, registre, conjugaison },
+    ]);
     if (!wordId) throw new Error('add-word-failed');
     const [indexId] = await db.add('term_index', [
         { term, normalized: normalizeTerm(term), slug: category.slug, category: category.name, wordId, createdAt },
     ]);
     if (indexId) {
         await db.update(wordsTable(category.slug), [
-            { id: wordId, record: { term, pronunciation, translation, createdAt, indexId } },
+            { id: wordId, record: { term, pronunciation, translation, createdAt, indexId, registre, conjugaison } },
         ]);
     }
     return { id: wordId, category };
@@ -140,7 +149,21 @@ export const handler = router({
     'GET /api/words/:slug': [
         async ({ params }) => {
             const { items } = await db.list<WordRecord>(wordsTable(params.slug), { limit: 1000 });
-            const sorted = [...items].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            const toMigrate: Array<{ id: string; record: Record<string, unknown> }> = [];
+            const withDefaults = items.map((item) => {
+                const { id, ...rest } = item as WordRecord & { id: string };
+                const needsMigration = rest.registre === undefined || rest.conjugaison === undefined;
+                const registre = rest.registre ?? DEFAULT_REGISTER;
+                const conjugaison = rest.conjugaison ?? DEFAULT_CONJUGATION;
+                if (needsMigration) {
+                    toMigrate.push({ id, record: { ...rest, registre, conjugaison } });
+                }
+                return { id, ...rest, registre, conjugaison };
+            });
+            if (toMigrate.length) {
+                await db.update(wordsTable(params.slug), toMigrate);
+            }
+            const sorted = [...withDefaults].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             return json({ words: sorted });
         },
     ],
@@ -152,12 +175,16 @@ export const handler = router({
                 term?: string;
                 pronunciation?: string;
                 translation?: string;
+                registre?: string;
+                conjugaison?: string;
                 force?: boolean;
             };
             const term = (b.term || '').trim();
             const translation = (b.translation || '').trim();
             const categoryName = (b.categoryName || '').trim();
             const pronunciation = (b.pronunciation || '').trim();
+            const registre = (b.registre || DEFAULT_REGISTER).trim();
+            const conjugaison = (b.conjugaison || DEFAULT_CONJUGATION).trim();
             if (!term || !translation || !categoryName) {
                 return error('Le mot, la traduction et la catégorie sont requis', 400);
             }
@@ -167,25 +194,42 @@ export const handler = router({
                 const dup = index.find((i) => i.normalized === normalized);
                 if (dup) return json({ duplicate: true, existingCategory: dup.category });
             }
-            const { id, category } = await addWordRecord(categoryName, term, pronunciation, translation);
+            const { id, category } = await addWordRecord(categoryName, term, pronunciation, translation, registre, conjugaison);
             return json({
                 duplicate: false,
-                word: { id, term, pronunciation, translation, category: category.name, slug: category.slug },
+                word: {
+                    id,
+                    term,
+                    pronunciation,
+                    translation,
+                    registre,
+                    conjugaison,
+                    category: category.name,
+                    slug: category.slug,
+                },
             });
         },
     ],
 
     'PUT /api/words/:slug/:id': [
         async ({ params, body }) => {
-            const b = (body || {}) as { term?: string; pronunciation?: string; translation?: string };
+            const b = (body || {}) as {
+                term?: string;
+                pronunciation?: string;
+                translation?: string;
+                registre?: string;
+                conjugaison?: string;
+            };
             const [existing] = await db.get<WordRecord>(wordsTable(params.slug), [params.id]);
             if (!existing) return error('Mot introuvable', 404);
             const term = (b.term ?? existing.term).trim();
             const pronunciation = (b.pronunciation ?? existing.pronunciation ?? '').trim();
             const translation = (b.translation ?? existing.translation).trim();
+            const registre = (b.registre ?? existing.registre ?? DEFAULT_REGISTER).trim();
+            const conjugaison = (b.conjugaison ?? existing.conjugaison ?? DEFAULT_CONJUGATION).trim();
             if (!term || !translation) return error('Le mot et la traduction sont requis', 400);
             const [ok] = await db.update(wordsTable(params.slug), [
-                { id: params.id, record: { ...existing, term, pronunciation, translation } },
+                { id: params.id, record: { ...existing, term, pronunciation, translation, registre, conjugaison } },
             ]);
             if (!ok) return error('Échec de la mise à jour', 500);
             if (existing.indexId) {
@@ -204,7 +248,7 @@ export const handler = router({
                     },
                 ]);
             }
-            return json({ word: { id: params.id, term, pronunciation, translation } });
+            return json({ word: { id: params.id, term, pronunciation, translation, registre, conjugaison } });
         },
     ],
 
@@ -290,7 +334,14 @@ export const handler = router({
     'POST /api/words/bulk-add': [
         async ({ body }) => {
             const b = (body || {}) as {
-                entries?: Array<{ term?: string; pronunciation?: string; translation?: string; categoryName?: string }>;
+                entries?: Array<{
+                    term?: string;
+                    pronunciation?: string;
+                    translation?: string;
+                    categoryName?: string;
+                    registre?: string;
+                    conjugaison?: string;
+                }>;
             };
             const entries = Array.isArray(b.entries) ? b.entries : [];
             if (!entries.length) return error('Aucun mot à ajouter', 400);
@@ -301,12 +352,14 @@ export const handler = router({
                 const translation = (e.translation || '').trim();
                 const categoryName = (e.categoryName || '').trim();
                 const pronunciation = (e.pronunciation || '').trim();
+                const registre = (e.registre || DEFAULT_REGISTER).trim();
+                const conjugaison = (e.conjugaison || DEFAULT_CONJUGATION).trim();
                 if (!term || !translation || !categoryName) {
                     skipped.push({ term: term || '(vide)', reason: 'incomplet' });
                     continue;
                 }
                 try {
-                    const { category } = await addWordRecord(categoryName, term, pronunciation, translation);
+                    const { category } = await addWordRecord(categoryName, term, pronunciation, translation, registre, conjugaison);
                     added.push({ term, category: category.name });
                 } catch {
                     skipped.push({ term, reason: 'échec' });
