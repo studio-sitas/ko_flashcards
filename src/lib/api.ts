@@ -1,0 +1,83 @@
+import { api } from '@appdeploy/client';
+
+export interface CategorySummary {
+    id: string;
+    name: string;
+    slug: string;
+    count: number;
+}
+
+export interface Word {
+    id: string;
+    term: string;
+    pronunciation: string;
+    translation: string;
+}
+
+export interface Candidate {
+    term: string;
+    pronunciation: string;
+    translation: string;
+    suggestedCategory: string;
+    duplicate: boolean;
+    existingCategory?: string;
+}
+
+export async function fetchCategories(): Promise<CategorySummary[]> {
+    const { data } = await api.get('/api/categories');
+    return data as CategorySummary[];
+}
+
+export async function createCategory(name: string): Promise<{ id: string; name: string; slug: string }> {
+    const { data } = await api.post('/api/categories', { name });
+    return data.category as { id: string; name: string; slug: string };
+}
+
+export async function deleteCategory(slug: string): Promise<void> {
+    await api.delete(`/api/categories/${encodeURIComponent(slug)}`);
+}
+
+export async function fetchWords(slug: string): Promise<Word[]> {
+    const { data } = await api.get(`/api/words/${encodeURIComponent(slug)}`);
+    return data.words as Word[];
+}
+
+export async function addWord(params: {
+    categoryName: string;
+    term: string;
+    pronunciation: string;
+    translation: string;
+    force?: boolean;
+}): Promise<{ duplicate: boolean; existingCategory?: string; word?: Word & { category: string; slug: string } }> {
+    const { data } = await api.post('/api/words', params);
+    return data;
+}
+
+export async function updateWord(
+    slug: string,
+    id: string,
+    params: { term: string; pronunciation: string; translation: string }
+): Promise<Word> {
+    const { data } = await api.put(`/api/words/${encodeURIComponent(slug)}/${id}`, params);
+    return data.word as Word;
+}
+
+export async function deleteWord(slug: string, id: string): Promise<void> {
+    await api.delete(`/api/words/${encodeURIComponent(slug)}/${id}`);
+}
+
+export async function extractWordsFromImage(
+    imageData: string,
+    mimeType: string,
+    categoryHint?: string
+): Promise<Candidate[]> {
+    const { data } = await api.post('/api/extract-words', { image: imageData, mimeType, categoryHint });
+    return data.candidates as Candidate[];
+}
+
+export async function bulkAddWords(
+    entries: Array<{ term: string; pronunciation: string; translation: string; categoryName: string }>
+): Promise<{ added: Array<{ term: string; category: string }>; skipped: Array<{ term: string; reason: string }> }> {
+    const { data } = await api.post('/api/words/bulk-add', { entries });
+    return data;
+}

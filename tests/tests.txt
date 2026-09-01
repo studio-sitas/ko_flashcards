@@ -1,0 +1,91 @@
+# Tests
+
+## Test 1 - Create a category, add words, and review them as flashcards [sanity]
+Viewport: desktop
+Covers: category creation, manual word creation (database create), flashcard flip/reveal, next-card navigation, persistence after reload
+Description: Verifies the core revision workflow — creating a category, adding vocabulary manually, and reviewing it as flashcards with translations that persist after a reload.
+
+Steps:
+1. On the main menu, click "Nouvelle catégorie", type "Verbes" and confirm creation
+2. Open the "Verbes" category card (this opens the flashcard view with no words yet)
+3. Click "Ajouter un mot", fill in "가다" as the Korean word, "gada" as pronunciation, "aller" as translation, and submit
+4. Click "Ajouter un mot" again, fill in "오다" as the Korean word, "oda" as pronunciation, "venir" as translation, and submit
+5. Go back to the "Verbes" flashcard view
+6. Click the flashcard to flip it and reveal the translation
+7. Click the next-card arrow to move to the following card
+8. Refresh the page and open "Verbes" again
+
+Expected: The first flashcard shows "가다" with "gada" beneath it, and flipping it reveals "aller"; clicking next shows "오다" / "oda" as the second card; after the page refresh, opening "Verbes" still shows both words.
+
+## Test 2 - Delete a category and cascade-delete its words
+Viewport: desktop
+Covers: destructive-action confirmation, category deletion, cascade delete of words, persistence after reload
+
+Setup:
+1. Create a category named "Adjectifs"
+2. Open "Adjectifs", go to "Gérer les mots" then "Ajouter un mot", and add the word "크다" / "keuda" / "être grand"
+
+Description: Verifies that deleting a category requires confirmation and permanently removes it together with its words.
+
+Steps:
+1. From the main menu, click the delete icon on the "Adjectifs" category card
+2. Confirm the deletion in the confirmation dialog
+3. Refresh the page
+
+Expected: "Adjectifs" no longer appears in the category menu after the refresh.
+
+## Test 3 - Reject an incomplete manual word on mobile
+Viewport: mobile
+Covers: required-field validation, invalid-write guardrail
+
+Setup:
+1. Create a category named "Noms"
+
+Description: Verifies invalid input is blocked without creating a record.
+
+Steps:
+1. Open "Noms", go to "Gérer les mots" then "Ajouter un mot"
+2. Leave the Korean word field empty, type only a translation, and submit the form
+
+Expected: A validation message is visible and no word is added to "Noms".
+
+## Test 4 - Warn about a duplicate word on manual add
+Viewport: desktop
+Covers: duplicate detection guardrail, term index lookup, force-add override
+
+Setup:
+1. Create a category named "Particules"
+2. Open "Particules", go to "Gérer les mots" then "Ajouter un mot", and add the word "은/는" / "eun/neun" / "particule de thème"
+
+Description: Verifies that adding a word that already exists elsewhere surfaces a duplicate warning instead of silently creating a second copy.
+
+Steps:
+1. From the "Particules" word list, click "Ajouter un mot"
+2. Enter the same term "은/는" again (any pronunciation/translation) and submit
+3. Dismiss the duplicate warning without confirming
+
+Expected: A duplicate warning appears mentioning the "Particules" category, and after dismissing it the "Particules" word list still shows exactly one "은/는" entry.
+
+## Test 5 - Photo import shows a visible error when extraction fails
+Viewport: desktop
+Covers: photo import trigger, AI extraction request, user-visible error handling for a failed extraction
+
+Description: Verifies a failed AI photo-extraction request surfaces as a visible error instead of silently doing nothing.
+
+QA Faults:
+```json
+[
+  {
+    "method": "POST",
+    "path": "/api/extract-words",
+    "status": 500,
+    "body_json": { "error": "simulated_failure" }
+  }
+]
+```
+
+Steps:
+1. From the main menu, click "Ajouter des mots par photo"
+2. Choose/upload any image file
+
+Expected: A visible error message indicates the photo analysis failed, a retry option is shown, and no candidate word list appears.
