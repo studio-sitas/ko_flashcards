@@ -13,6 +13,9 @@ body {
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
     position: relative;
+    /* Never hyphenate — a long word should wrap to the next line whole, not split with a "-". */
+    -webkit-hyphens: none;
+    hyphens: none;
 }
 
 html.dark body {
