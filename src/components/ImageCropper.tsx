@@ -33,11 +33,15 @@ export function ImageCropper({ src, naturalWidth, naturalHeight, onConfirm, onCa
             const w = el.clientWidth;
             const h = el.clientHeight;
             setRendered({ w, h });
-            // Inset the starting crop so the handles don't start flush against the
-            // image edges (and the scroll container's edges), which made them hard to grab.
+            // Start with a square crop (most photographed word lists read fine in a
+            // square) inset from the sides so handles don't start flush against the
+            // image edges, and centered vertically — photos are usually portrait, so
+            // the full-height rect used to make the default crop needlessly tall.
             const insetX = Math.round(w * 0.08);
-            const insetY = Math.round(h * 0.08);
-            setCrop({ x: insetX, y: insetY, w: w - insetX * 2, h: h - insetY * 2 });
+            const cropW = w - insetX * 2;
+            const cropH = Math.min(cropW, h);
+            const y = Math.max(0, Math.round((h - cropH) / 2));
+            setCrop({ x: insetX, y, w: cropW, h: cropH });
         };
         if (el?.complete) measure();
         el?.addEventListener('load', measure);
