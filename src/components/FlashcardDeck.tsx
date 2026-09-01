@@ -338,8 +338,11 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                                     {current.example && (
                                         <div className="mt-2 pt-3 border-t border-moss-400/40 w-full text-center">
                                             <p className="text-xl text-moss-50 italic break-words">{current.example.term}</p>
-                                            <p className="text-base text-moss-100/80 mt-0.5">{current.example.pronunciation}</p>
-                                            <p className="text-base text-moss-100/80">{current.example.translation}</p>
+                                            <p className="text-base text-moss-100/80 mt-0.5">
+                                                {current.example.pronunciation}
+                                                <span className="mx-1.5 opacity-60">&bull;</span>
+                                                {current.example.translation}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
