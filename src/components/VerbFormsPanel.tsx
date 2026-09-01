@@ -80,12 +80,12 @@ export function VerbFormsPanel({ slug, word, onUpdated }: Props) {
     };
 
     return (
-        <div className="mt-3 border-t border-slate-100 dark:border-slate-700 pt-3 space-y-2">
+        <div className="mt-3 border-t border-stone-200 dark:border-stone-700 pt-3 space-y-2">
             <ChoiceButtons label="Registre" options={REGISTER_OPTIONS} value={registre} onChange={setRegistre} />
             <ChoiceButtons label="Temps" options={CONJUGATION_OPTIONS} value={conjugaison} onChange={setConjugaison} />
             <ChoiceButtons label="Négation" options={NEGATION_OPTIONS} value={negation} onChange={setNegation} />
 
-            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3 mt-2">
+            <div className="bg-stone-50 dark:bg-ink rounded-lg p-3 mt-2">
                 {stillGenerating ? (
                     <p className="text-sm text-amber-600 dark:text-amber-400">Conjugaisons en cours de génération…</p>
                 ) : editing ? (
@@ -94,23 +94,23 @@ export function VerbFormsPanel({ slug, word, onUpdated }: Props) {
                             value={draftTerm}
                             onChange={(e) => setDraftTerm(e.target.value)}
                             placeholder="Mot en coréen"
-                            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 rounded-lg px-2 py-1 text-sm"
+                            className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink-soft dark:text-paper rounded-lg px-2 py-1 text-sm"
                         />
                         <input
                             value={draftPronunciation}
                             onChange={(e) => setDraftPronunciation(e.target.value)}
                             placeholder="Prononciation"
-                            className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 rounded-lg px-2 py-1 text-sm"
+                            className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink-soft dark:text-paper rounded-lg px-2 py-1 text-sm"
                         />
                         <div className="flex gap-2">
                             <button
                                 disabled={busy}
                                 onClick={saveForm}
-                                className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm font-medium"
+                                className="flex items-center gap-1 text-gold-600 dark:text-gold-400 text-sm font-medium"
                             >
                                 <Check size={14} /> Enregistrer
                             </button>
-                            <button onClick={() => setEditing(false)} className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-sm">
+                            <button onClick={() => setEditing(false)} className="flex items-center gap-1 text-stone-500 dark:text-stone-400 text-sm">
                                 <X size={14} /> Annuler
                             </button>
                         </div>
@@ -118,10 +118,10 @@ export function VerbFormsPanel({ slug, word, onUpdated }: Props) {
                 ) : (
                     <div className="flex items-center justify-between gap-2">
                         <div>
-                            <p className="font-medium text-slate-800 dark:text-slate-100">{form?.term || word.term}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{form?.pronunciation || word.pronunciation}</p>
+                            <p className="font-medium text-ink dark:text-paper">{form?.term || word.term}</p>
+                            <p className="text-sm text-stone-500 dark:text-stone-400">{form?.pronunciation || word.pronunciation}</p>
                         </div>
-                        <button onClick={startEdit} aria-label="Corriger cette forme" className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600">
+                        <button onClick={startEdit} aria-label="Corriger cette forme" className="p-2 text-stone-400 dark:text-stone-500 hover:text-gold-600">
                             <Pencil size={16} />
                         </button>
                     </div>
@@ -133,7 +133,7 @@ export function VerbFormsPanel({ slug, word, onUpdated }: Props) {
             <button
                 disabled={busy}
                 onClick={regenerateAll}
-                className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400 disabled:opacity-50"
             >
                 <RefreshCw size={14} className={busy ? 'animate-spin' : ''} /> Régénérer toutes les conjugaisons
             </button>

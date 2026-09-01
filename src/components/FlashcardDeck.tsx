@@ -129,14 +129,14 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
 
     if (words === null) {
         return (
-            <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-900">
+            <div className="min-h-screen flex flex-col bg-paper dark:bg-ink-soft">
                 <header className="flex items-center px-4 py-3">
-                    <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
+                    <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-ink dark:text-paper">
                         <ArrowLeft size={22} />
                     </button>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100 ml-1">{categoryName}</p>
+                    <p className="font-display font-semibold text-ink dark:text-paper ml-1">{categoryName}</p>
                 </header>
-                <div className="flex-1 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                <div className="flex-1 flex items-center justify-center text-stone-400 dark:text-stone-500">
                     <Loader2 className="animate-spin" size={28} />
                 </div>
             </div>
@@ -145,20 +145,20 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
 
     if (order.length === 0) {
         return (
-            <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-900">
+            <div className="min-h-screen flex flex-col bg-paper dark:bg-ink-soft">
                 <header className="flex items-center px-4 py-3">
-                    <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
+                    <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-ink dark:text-paper">
                         <ArrowLeft size={22} />
                     </button>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100 ml-1">{categoryName}</p>
+                    <p className="font-display font-semibold text-ink dark:text-paper ml-1">{categoryName}</p>
                 </header>
                 <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-                    <p className="text-lg text-slate-600 dark:text-slate-300 mb-4">
+                    <p className="text-lg text-stone-600 dark:text-stone-300 mb-4">
                         {loadError
                             ? 'Impossible de charger les mots pour le moment.'
                             : 'Aucun mot dans cette catégorie pour le moment.'}
                     </p>
-                    <button onClick={onManage} className="px-4 py-2 rounded-full bg-emerald-600 text-white font-medium">
+                    <button onClick={onManage} className="px-4 py-2 rounded-full bg-gold-600 hover:bg-gold-700 text-white font-medium transition-colors">
                         Ajouter un mot
                     </button>
                 </div>
@@ -224,21 +224,21 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 to-white dark:from-slate-900 dark:to-slate-900">
+        <div className="min-h-screen flex flex-col bg-paper dark:bg-ink-soft">
             <header className="flex items-center justify-between px-4 py-3">
-                <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
+                <button onClick={onBack} aria-label="Retour au menu" className="p-2 -ml-2 text-ink dark:text-paper">
                     <ArrowLeft size={22} />
                 </button>
                 <div className="text-center">
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">{categoryName}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="font-display font-semibold uppercase tracking-wide text-ink dark:text-paper">{categoryName}</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
                         {index + 1} / {order.length}
                     </p>
                 </div>
                 <button
                     onClick={() => setOrder(shuffleArray(order))}
                     aria-label="Mélanger les cartes"
-                    className="p-2 -mr-2 text-slate-600 dark:text-slate-300"
+                    className="p-2 -mr-2 text-ink dark:text-paper"
                 >
                     <Shuffle size={20} />
                 </button>
@@ -266,17 +266,23 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                                 willChange: 'transform, opacity, filter',
                             }}
                         >
-                            <div className="w-full h-full rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8">
-                                <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
-                                    {previewDisplayTerm}
-                                </p>
-                                <p className="text-xl text-emerald-600 dark:text-emerald-400">{previewDisplayPronunciation}</p>
-                                {previewStillGenerating && (
-                                    <p className="text-sm text-amber-600 dark:text-amber-400">
-                                        Conjugaisons en cours de génération…
-                                    </p>
-                                )}
-                                <p className="text-sm text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
+                            <div className="w-full h-full [perspective:1200px]">
+                                <div className="relative w-full h-full [transform-style:preserve-3d]">
+                                    <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
+                                        <p className="font-display text-4xl font-bold text-ink dark:text-paper text-center break-words">
+                                            {previewDisplayTerm}
+                                        </p>
+                                        <p className="text-xl text-gold-600 dark:text-gold-400">{previewDisplayPronunciation}</p>
+                                        {previewStillGenerating && (
+                                            <p className="text-sm text-amber-600 dark:text-amber-400">
+                                                Conjugaisons en cours de génération…
+                                            </p>
+                                        )}
+                                        <p className="text-sm uppercase tracking-wide text-stone-400 dark:text-stone-500 mt-4">
+                                            Touche pour voir la traduction
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -303,31 +309,33 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                                 }`}
                                 style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                             >
-                                <div className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
-                                    <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
+                                <div className="absolute inset-0 rounded-3xl bg-white dark:bg-ink shadow-xl shadow-ink/5 border border-gold-100 dark:border-paper/10 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
+                                    <p className="font-display text-4xl font-bold text-ink dark:text-paper text-center break-words">
                                         {displayTerm}
                                     </p>
-                                    <p className="text-xl text-emerald-600 dark:text-emerald-400">{displayPronunciation}</p>
+                                    <p className="text-xl text-gold-600 dark:text-gold-400">{displayPronunciation}</p>
                                     {stillGenerating && (
                                         <p className="text-sm text-amber-600 dark:text-amber-400">
                                             Conjugaisons en cours de génération…
                                         </p>
                                     )}
-                                    <p className="text-sm text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
+                                    <p className="text-sm uppercase tracking-wide text-stone-400 dark:text-stone-500 mt-4">
+                                        Touche pour voir la traduction
+                                    </p>
                                 </div>
-                                <div className="absolute inset-0 rounded-3xl bg-emerald-600 dark:bg-emerald-700 shadow-xl flex flex-col items-center justify-center gap-2 p-6 overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                    <p className="text-3xl font-bold text-white text-center break-words">
+                                <div className="absolute inset-0 rounded-3xl bg-moss-600 dark:bg-moss-700 shadow-xl flex flex-col items-center justify-center gap-2 p-6 overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                    <p className="font-display text-3xl font-bold text-white text-center break-words">
                                         {current.translation}
                                         {isVerbs && negation === 'negatif' ? ' (négatif)' : ''}
                                     </p>
-                                    <p className="text-base text-emerald-100">
+                                    <p className="text-base text-moss-100">
                                         {displayTerm} · {displayPronunciation}
                                     </p>
                                     {current.example && (
-                                        <div className="mt-2 pt-3 border-t border-emerald-400/40 w-full text-center">
-                                            <p className="text-base text-emerald-50 italic break-words">{current.example.term}</p>
-                                            <p className="text-sm text-emerald-100/80 mt-0.5">{current.example.pronunciation}</p>
-                                            <p className="text-sm text-emerald-100/80">{current.example.translation}</p>
+                                        <div className="mt-2 pt-3 border-t border-moss-400/40 w-full text-center">
+                                            <p className="text-base text-moss-50 italic break-words">{current.example.term}</p>
+                                            <p className="text-sm text-moss-100/80 mt-0.5">{current.example.pronunciation}</p>
+                                            <p className="text-sm text-moss-100/80">{current.example.translation}</p>
                                         </div>
                                     )}
                                 </div>
@@ -349,17 +357,17 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                 <button
                     onClick={() => changeCard(-1)}
                     aria-label="Mot précédent"
-                    className="p-3 rounded-full bg-white dark:bg-slate-800 shadow border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+                    className="p-3 rounded-full bg-white dark:bg-ink shadow border border-gold-100 dark:border-paper/10 text-ink dark:text-paper"
                 >
                     <ChevronLeft />
                 </button>
-                <button onClick={onManage} className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 underline">
+                <button onClick={onManage} className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 underline">
                     <ListChecks size={16} /> Gérer les mots
                 </button>
                 <button
                     onClick={() => changeCard(1)}
                     aria-label="Mot suivant"
-                    className="p-3 rounded-full bg-white dark:bg-slate-800 shadow border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+                    className="p-3 rounded-full bg-white dark:bg-ink shadow border border-gold-100 dark:border-paper/10 text-ink dark:text-paper"
                 >
                     <ChevronRight />
                 </button>

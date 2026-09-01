@@ -9,10 +9,35 @@ body,
 }
 
 body {
-    background-color: #f8fafc;
+    background-color: #f7f2e7;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
 }
 
 html.dark body {
-    background-color: #0f172a;
+    background-color: #171410;
+}
+
+/* Subtle paper grain for warmth ("sentir la matière") — a fixed, low-opacity
+   noise layer sitting above the background but below all content. */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+html.dark body::before {
+    opacity: 0.35;
+    mix-blend-mode: overlay;
+}
+
+#root {
+    position: relative;
+    z-index: 1;
 }

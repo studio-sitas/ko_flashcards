@@ -13,7 +13,7 @@ interface Props<T extends string> {
 export function ChoiceButtons<T extends string>({ label, options, value, onChange }: Props<T>) {
     return (
         <div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-1.5">{label}</p>
+            <p className="text-xs uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-1.5">{label}</p>
             <div className="flex flex-wrap gap-1.5">
                 {options.map((o) => (
                     <button
@@ -23,8 +23,8 @@ export function ChoiceButtons<T extends string>({ label, options, value, onChang
                         aria-pressed={value === o.value}
                         className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
                             value === o.value
-                                ? 'bg-emerald-600 border-emerald-600 text-white'
-                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300'
+                                ? 'bg-gold-600 border-gold-600 text-white'
+                                : 'bg-white dark:bg-ink border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300'
                         }`}
                     >
                         {o.label}

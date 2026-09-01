@@ -41,12 +41,12 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-900 px-4 py-6">
+        <div className="min-h-screen bg-paper dark:bg-ink-soft px-4 py-6">
             <header className="flex items-center gap-3 mb-6">
-                <button onClick={onBack} aria-label="Retour" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
+                <button onClick={onBack} aria-label="Retour" className="p-2 -ml-2 text-ink dark:text-paper">
                     <ArrowLeft size={22} />
                 </button>
-                <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Ajouter un mot · {categoryName}</h1>
+                <h1 className="font-display text-xl font-semibold text-ink dark:text-paper">Ajouter un mot · {categoryName}</h1>
             </header>
 
             <form
@@ -57,45 +57,45 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
                 className="space-y-4 max-w-sm"
             >
                 <div>
-                    <label className="text-sm text-slate-600 dark:text-slate-400 block mb-1" htmlFor="word-term">
+                    <label className="text-sm text-stone-600 dark:text-stone-400 block mb-1" htmlFor="word-term">
                         Mot en coréen {isVerbs ? '(infinitif) ' : ''}*
                     </label>
                     <input
                         id="word-term"
                         value={term}
                         onChange={(e) => setTerm(e.target.value)}
-                        className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2"
+                        className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-lg px-3 py-2"
                         placeholder={isVerbs ? '예: 가다' : '예: 친구'}
                     />
                 </div>
                 <div>
-                    <label className="text-sm text-slate-600 dark:text-slate-400 block mb-1" htmlFor="word-pronunciation">
+                    <label className="text-sm text-stone-600 dark:text-stone-400 block mb-1" htmlFor="word-pronunciation">
                         Prononciation
                     </label>
                     <input
                         id="word-pronunciation"
                         value={pronunciation}
                         onChange={(e) => setPronunciation(e.target.value)}
-                        className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2"
+                        className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-lg px-3 py-2"
                         placeholder="ex: tchin'gou"
                     />
                 </div>
                 <div>
-                    <label className="text-sm text-slate-600 dark:text-slate-400 block mb-1" htmlFor="word-translation">
+                    <label className="text-sm text-stone-600 dark:text-stone-400 block mb-1" htmlFor="word-translation">
                         Traduction française *
                     </label>
                     <input
                         id="word-translation"
                         value={translation}
                         onChange={(e) => setTranslation(e.target.value)}
-                        className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-3 py-2"
+                        className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-lg px-3 py-2"
                         placeholder="ex: ami"
                     />
                 </div>
 
                 {isVerbs && (
-                    <p className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5">
-                        <Sparkles size={14} className="shrink-0 mt-0.5" />
+                    <p className="flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-ink rounded-lg p-2.5">
+                        <Sparkles size={14} className="shrink-0 mt-0.5 text-gold-600 dark:text-gold-400" />
                         Les conjugaisons (3 registres × 4 temps × affirmatif/négatif) seront générées automatiquement à
                         partir de cet infinitif — modifiables ensuite dans « Gérer les mots ».
                     </p>
@@ -120,7 +120,7 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setDuplicateWarning(null)}
-                                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 rounded-md text-sm"
+                                className="px-3 py-1.5 bg-white dark:bg-ink border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 rounded-md text-sm"
                             >
                                 Annuler
                             </button>
@@ -131,7 +131,7 @@ export function AddWordForm({ categoryName, onBack, onAdded }: Props) {
                 <button
                     type="submit"
                     disabled={busy}
-                    className="w-full bg-emerald-600 text-white rounded-lg py-2.5 font-medium disabled:opacity-50"
+                    className="w-full bg-gold-600 hover:bg-gold-700 text-white rounded-lg py-2.5 font-medium disabled:opacity-50 transition-colors"
                 >
                     {busy && isVerbs ? 'Génération des conjugaisons…' : 'Ajouter'}
                 </button>

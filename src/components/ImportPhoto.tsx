@@ -119,18 +119,18 @@ export function ImportPhoto({ onBack, onImported }: Props) {
     const includedCount = candidates.filter((c) => c.include).length;
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-900 px-4 py-6 pb-10">
+        <div className="min-h-screen bg-paper dark:bg-ink-soft px-4 py-6 pb-10">
             <header className="flex items-center gap-3 mb-6">
-                <button onClick={onBack} aria-label="Retour" className="p-2 -ml-2 text-slate-600 dark:text-slate-300">
+                <button onClick={onBack} aria-label="Retour" className="p-2 -ml-2 text-ink dark:text-paper">
                     <ArrowLeft size={22} />
                 </button>
-                <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Ajouter des mots par photo</h1>
+                <h1 className="text-xl font-semibold text-ink dark:text-paper">Ajouter des mots par photo</h1>
             </header>
 
             {step === 'select' && (
                 <div className="flex flex-col items-center text-center gap-4 mt-10">
-                    <Camera size={48} className="text-emerald-600 dark:text-emerald-400" />
-                    <p className="text-slate-600 dark:text-slate-400 max-w-xs">
+                    <Camera size={48} className="text-gold-600 dark:text-gold-400" />
+                    <p className="text-stone-600 dark:text-stone-400 max-w-xs">
                         Prends en photo une page de ton livre. L'IA va lire les mots coréens, leur prononciation et leur
                         traduction, et repérer les doublons avant de les ajouter.
                     </p>
@@ -148,7 +148,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                     />
                     <button
                         onClick={() => inputRef.current?.click()}
-                        className="bg-emerald-600 text-white px-6 py-3 rounded-full font-medium"
+                        className="bg-gold-600 hover:bg-gold-700 text-white px-6 py-3 rounded-full font-medium transition-colors"
                     >
                         Choisir une photo
                     </button>
@@ -156,7 +156,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
             )}
 
             {step === 'preparing' && (
-                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500 dark:text-slate-400">
+                <div className="flex flex-col items-center gap-3 mt-16 text-stone-500 dark:text-stone-400">
                     <Loader2 className="animate-spin" size={32} />
                     <p>Préparation de la photo…</p>
                 </div>
@@ -173,14 +173,14 @@ export function ImportPhoto({ onBack, onImported }: Props) {
             )}
 
             {step === 'analyzing' && (
-                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500 dark:text-slate-400">
+                <div className="flex flex-col items-center gap-3 mt-16 text-stone-500 dark:text-stone-400">
                     <Loader2 className="animate-spin" size={32} />
                     <p>Analyse en cours…</p>
                 </div>
             )}
 
             {step === 'saving' && (
-                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500 dark:text-slate-400 text-center px-6">
+                <div className="flex flex-col items-center gap-3 mt-16 text-stone-500 dark:text-stone-400 text-center px-6">
                     <Loader2 className="animate-spin" size={32} />
                     <p>Ajout en cours…</p>
                     {includesVerbs && (
@@ -198,7 +198,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                     <p className="text-red-600 dark:text-red-400">{errorMsg}</p>
                     <button
                         onClick={startOver}
-                        className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
+                        className="mt-2 px-4 py-2 bg-stone-100 dark:bg-ink rounded-lg text-stone-700 dark:text-stone-200"
                     >
                         Réessayer
                     </button>
@@ -209,22 +209,22 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                 <div>
                     {candidates.length === 0 ? (
                         <div className="text-center mt-10">
-                            <p className="text-slate-500 dark:text-slate-400 mb-4">Aucun mot n'a été reconnu sur cette photo.</p>
+                            <p className="text-stone-500 dark:text-stone-400 mb-4">Aucun mot n'a été reconnu sur cette photo.</p>
                             <button
                                 onClick={startOver}
-                                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
+                                className="px-4 py-2 bg-stone-100 dark:bg-ink rounded-lg text-stone-700 dark:text-stone-200"
                             >
                                 Réessayer avec une autre photo
                             </button>
                         </div>
                     ) : (
                         <>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                            <p className="text-sm text-stone-500 dark:text-stone-400 mb-2">
                                 {candidates.length} mot{candidates.length !== 1 ? 's' : ''} détecté
                                 {candidates.length !== 1 ? 's' : ''}. Vérifie, corrige et choisis les mots à ajouter.
                             </p>
                             {includesVerbs && (
-                                <p className="flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5 mb-4">
+                                <p className="flex items-start gap-1.5 text-xs text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-ink rounded-lg p-2.5 mb-4">
                                     <Sparkles size={14} className="shrink-0 mt-0.5" />
                                     Pour les mots catégorisés « Verbes », les conjugaisons (registres, temps, négation)
                                     seront générées automatiquement à l'ajout.
@@ -237,7 +237,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                         className={`border rounded-xl p-3 ${
                                             c.duplicate
                                                 ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30'
-                                                : 'border-slate-100 dark:border-slate-700'
+                                                : 'border-stone-200 dark:border-stone-700'
                                         }`}
                                     >
                                         <div className="flex items-start gap-2">
@@ -257,25 +257,25 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                                                 <input
                                                     value={c.term}
                                                     onChange={(e) => updateCandidate(i, { term: e.target.value })}
-                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm font-medium"
+                                                    className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-md px-2 py-1 text-sm font-medium"
                                                     placeholder="Mot coréen"
                                                 />
                                                 <input
                                                     value={c.pronunciation}
                                                     onChange={(e) => updateCandidate(i, { pronunciation: e.target.value })}
-                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
+                                                    className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-md px-2 py-1 text-sm"
                                                     placeholder="Prononciation"
                                                 />
                                                 <input
                                                     value={c.translation}
                                                     onChange={(e) => updateCandidate(i, { translation: e.target.value })}
-                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
+                                                    className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-md px-2 py-1 text-sm"
                                                     placeholder="Traduction"
                                                 />
                                                 <select
                                                     value={c.suggestedCategory}
                                                     onChange={(e) => updateCandidate(i, { suggestedCategory: e.target.value })}
-                                                    className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 rounded-md px-2 py-1 text-sm"
+                                                    className="w-full border border-stone-200 dark:border-stone-600 dark:bg-ink dark:text-paper rounded-md px-2 py-1 text-sm"
                                                 >
                                                     {categories.map((cat) => (
                                                         <option key={cat.slug} value={cat.name}>
@@ -291,7 +291,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                             <button
                                 onClick={submit}
                                 disabled={includedCount === 0}
-                                className="w-full bg-emerald-600 text-white rounded-lg py-3 font-medium disabled:opacity-50"
+                                className="w-full bg-gold-600 hover:bg-gold-700 text-white rounded-lg py-3 font-medium disabled:opacity-50 transition-colors"
                             >
                                 Ajouter {includedCount} mot{includedCount !== 1 ? 's' : ''}
                             </button>
@@ -302,20 +302,20 @@ export function ImportPhoto({ onBack, onImported }: Props) {
 
             {step === 'done' && summary && (
                 <div className="flex flex-col items-center text-center gap-3 mt-16">
-                    <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" size={40} />
-                    <p className="text-slate-700 dark:text-slate-200 font-medium">
+                    <CheckCircle2 className="text-gold-600 dark:text-gold-400" size={40} />
+                    <p className="text-ink dark:text-paper font-medium">
                         {summary.added} mot{summary.added !== 1 ? 's' : ''} ajouté{summary.added !== 1 ? 's' : ''} !
                     </p>
                     {summary.skipped > 0 && (
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                        <p className="text-sm text-stone-500 dark:text-stone-400">
                             {summary.skipped} ignoré{summary.skipped !== 1 ? 's' : ''}.
                         </p>
                     )}
                     <div className="flex gap-3 mt-4">
-                        <button onClick={startOver} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200">
+                        <button onClick={startOver} className="px-4 py-2 bg-stone-100 dark:bg-ink rounded-lg text-stone-700 dark:text-stone-200">
                             Ajouter une autre photo
                         </button>
-                        <button onClick={onImported} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium">
+                        <button onClick={onImported} className="px-4 py-2 bg-gold-600 hover:bg-gold-700 text-white rounded-lg font-medium transition-colors">
                             Terminer
                         </button>
                     </div>

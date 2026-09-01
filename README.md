@@ -1,4 +1,4 @@
-# 단어 카드 — Flashcards Coréen
+# KO/CARDS — Flashcards Coréen
 
 App de révision de vocabulaire coréen : cartes avec terme coréen, prononciation et
 traduction française, organisées par catégorie (Noms, Verbes, Particules, Adjectifs, ...),

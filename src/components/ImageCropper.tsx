@@ -30,8 +30,14 @@ export function ImageCropper({ src, naturalWidth, naturalHeight, onConfirm, onCa
         const el = imgRef.current;
         const measure = () => {
             if (!el || !el.clientWidth || !el.clientHeight) return;
-            setRendered({ w: el.clientWidth, h: el.clientHeight });
-            setCrop({ x: 0, y: 0, w: el.clientWidth, h: el.clientHeight });
+            const w = el.clientWidth;
+            const h = el.clientHeight;
+            setRendered({ w, h });
+            // Inset the starting crop so the handles don't start flush against the
+            // image edges (and the scroll container's edges), which made them hard to grab.
+            const insetX = Math.round(w * 0.08);
+            const insetY = Math.round(h * 0.08);
+            setCrop({ x: insetX, y: insetY, w: w - insetX * 2, h: h - insetY * 2 });
         };
         if (el?.complete) measure();
         el?.addEventListener('load', measure);
@@ -124,11 +130,11 @@ export function ImageCropper({ src, naturalWidth, naturalHeight, onConfirm, onCa
 
     return (
         <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+            <p className="text-sm text-stone-500 dark:text-stone-400 mb-3">
                 Ajuste la zone à analyser si besoin (utile pour exclure du texte indésirable), puis valide.
             </p>
             <div
-                className="relative mx-auto max-h-[60vh] overflow-auto border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-100 dark:bg-slate-800"
+                className="relative mx-auto max-h-[60vh] overflow-auto border border-stone-200 dark:border-stone-700 rounded-xl bg-stone-100 dark:bg-ink"
                 style={{ touchAction: 'none' }}
             >
                 <div className="relative inline-block">
@@ -142,7 +148,7 @@ export function ImageCropper({ src, naturalWidth, naturalHeight, onConfirm, onCa
                     {crop && rendered && (
                         <div
                             onPointerDown={startDrag('move')}
-                            className="absolute border-2 border-emerald-400 cursor-move"
+                            className="absolute border-2 border-gold-400 cursor-move"
                             style={{
                                 left: crop.x,
                                 top: crop.y,
@@ -157,16 +163,18 @@ export function ImageCropper({ src, naturalWidth, naturalHeight, onConfirm, onCa
                                     key={corner}
                                     onPointerDown={startDrag(corner)}
                                     style={{ touchAction: 'none' }}
-                                    className={`absolute w-6 h-6 bg-emerald-400 rounded-full border-2 border-white ${
+                                    className={`absolute w-11 h-11 flex items-center justify-center ${
                                         corner === 'nw'
-                                            ? '-left-3 -top-3 cursor-nwse-resize'
+                                            ? '-left-[22px] -top-[22px] cursor-nwse-resize'
                                             : corner === 'ne'
-                                              ? '-right-3 -top-3 cursor-nesw-resize'
+                                              ? '-right-[22px] -top-[22px] cursor-nesw-resize'
                                               : corner === 'sw'
-                                                ? '-left-3 -bottom-3 cursor-nesw-resize'
-                                                : '-right-3 -bottom-3 cursor-nwse-resize'
+                                                ? '-left-[22px] -bottom-[22px] cursor-nesw-resize'
+                                                : '-right-[22px] -bottom-[22px] cursor-nwse-resize'
                                     }`}
-                                />
+                                >
+                                    <div className="w-5 h-5 bg-gold-400 rounded-full border-2 border-white shadow" />
+                                </div>
                             ))}
                         </div>
                     )}
@@ -175,17 +183,17 @@ export function ImageCropper({ src, naturalWidth, naturalHeight, onConfirm, onCa
             <div className="flex gap-2 mt-4">
                 <button
                     onClick={onCancel}
-                    className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200 text-sm"
+                    className="flex-1 px-3 py-2 bg-stone-100 dark:bg-ink rounded-lg text-stone-700 dark:text-stone-200 text-sm"
                 >
                     Annuler
                 </button>
                 <button
                     onClick={reset}
-                    className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200 text-sm"
+                    className="flex-1 px-3 py-2 bg-stone-100 dark:bg-ink rounded-lg text-stone-700 dark:text-stone-200 text-sm"
                 >
                     Image entière
                 </button>
-                <button onClick={confirm} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg font-medium text-sm">
+                <button onClick={confirm} className="flex-1 px-3 py-2 bg-gold-600 hover:bg-gold-700 text-white rounded-lg font-medium text-sm transition-colors">
                     Valider
                 </button>
             </div>
