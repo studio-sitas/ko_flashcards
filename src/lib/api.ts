@@ -1,5 +1,17 @@
 import { api } from '@appdeploy/client';
 
+export function describeApiError(err: unknown, fallback: string): string {
+    const e = err as
+        | { response?: { data?: { error?: string }; status?: number }; data?: { error?: string }; message?: string }
+        | undefined;
+    const detail = e?.response?.data?.error ?? e?.data?.error;
+    if (typeof detail === 'string' && detail.trim()) return `${fallback} : ${detail.trim()}`;
+    const status = e?.response?.status;
+    if (typeof e?.message === 'string' && e.message.trim()) return `${fallback} : ${e.message.trim()}`;
+    if (typeof status === 'number') return `${fallback} (erreur ${status})`;
+    return `${fallback}.`;
+}
+
 export interface CategorySummary {
     id: string;
     name: string;

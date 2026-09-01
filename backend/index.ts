@@ -4,13 +4,19 @@ const REGISTERS = ['ultra-formel', 'poli', 'familier'] as const;
 const CONJUGATIONS = ['infinitif', 'present', 'passe', 'futur'] as const;
 const NEGATIONS = ['affirmatif', 'negatif'] as const;
 
+// Basé sur les 9 classes grammaticales traditionnelles du coréen (품사),
+// plus deux catégories pratiques (Expressions, Autre) qui ne sont pas des
+// classes grammaticales à proprement parler mais utiles pour un lexique.
 const FIXED_CATEGORIES: Array<{ name: string; slug: string }> = [
-    { name: 'Noms', slug: 'noms' },
-    { name: 'Verbes', slug: 'verbes' },
-    { name: 'Adjectifs', slug: 'adjectifs' },
-    { name: 'Adverbes', slug: 'adverbes' },
-    { name: 'Particules', slug: 'particules' },
-    { name: 'Chiffres', slug: 'chiffres' },
+    { name: 'Noms', slug: 'noms' }, // 명사
+    { name: 'Pronoms', slug: 'pronoms' }, // 대명사
+    { name: 'Numéraux', slug: 'numeraux' }, // 수사 (chiffres et nombres coréens)
+    { name: 'Verbes', slug: 'verbes' }, // 동사
+    { name: 'Adjectifs', slug: 'adjectifs' }, // 형용사
+    { name: 'Déterminants', slug: 'determinants' }, // 관형사
+    { name: 'Adverbes', slug: 'adverbes' }, // 부사
+    { name: 'Particules', slug: 'particules' }, // 조사
+    { name: 'Interjections', slug: 'interjections' }, // 감탄사
     { name: 'Expressions', slug: 'expressions' },
     { name: 'Autre', slug: 'autre' },
 ];
@@ -437,7 +443,7 @@ export const handler = router({
                     system:
                         "Tu es un assistant qui aide un francophone à réviser le coréen à partir de photos de manuel scolaire.",
                     prompt:
-                        "Cette image est une page de manuel de coréen contenant un lexique organisé en tableau ou en colonnes. Chaque ligne comporte : le mot en hangeul (coréen), sa romanisation/prononciation, et sa traduction en français. Le lexique peut être découpé en sections avec des titres. Choisis la catégorie suggérée pour chaque ligne UNIQUEMENT parmi cette liste fermée : \"Noms\", \"Verbes\", \"Adjectifs\", \"Adverbes\", \"Particules\", \"Chiffres\", \"Expressions\", \"Autre\". Utilise le titre de section le plus proche au-dessus de chaque ligne pour choisir la catégorie la plus proche de cette liste ; si rien ne correspond clairement, mets \"Autre\"." +
+                        "Cette image est une page de manuel de coréen contenant un lexique organisé en tableau ou en colonnes. Chaque ligne comporte : le mot en hangeul (coréen), sa romanisation/prononciation, et sa traduction en français. Le lexique peut être découpé en sections avec des titres. Choisis la catégorie grammaticale suggérée pour chaque ligne UNIQUEMENT parmi cette liste fermée, basée sur les classes grammaticales du coréen : \"Noms\" (명사), \"Pronoms\" (대명사), \"Numéraux\" (수사, chiffres/nombres), \"Verbes\" (동사), \"Adjectifs\" (형용사), \"Déterminants\" (관형사), \"Adverbes\" (부사), \"Particules\" (조사), \"Interjections\" (감탄사), \"Expressions\" (locutions/expressions figées), \"Autre\". Utilise le titre de section le plus proche au-dessus de chaque ligne ainsi que la nature grammaticale du mot pour choisir la catégorie la plus proche de cette liste ; si rien ne correspond clairement, mets \"Autre\"." +
                         (b.categoryHint
                             ? ` Si aucune section n'est identifiable pour un mot, utilise plutôt "${b.categoryHint}" comme catégorie suggérée.`
                             : '') +

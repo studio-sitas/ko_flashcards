@@ -84,8 +84,9 @@ QA Faults:
 Steps:
 1. From the main menu, click "Ajouter des mots par photo"
 2. Choose/upload any image file
+3. On the crop screen that appears, click "Valider" to confirm the default full-image crop
 
-Expected: A visible error message indicates the photo analysis failed, a retry option is shown, and no candidate word list appears.
+Expected: After step 3, a visible error message indicates the photo analysis failed and includes a specific reason (not just a generic phrase), a retry option is shown, and no candidate word list appears.
 
 ## Test 6 - Toggle dark mode and keep it after reload
 Viewport: desktop

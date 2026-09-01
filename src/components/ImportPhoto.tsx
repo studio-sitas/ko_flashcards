@@ -1,19 +1,26 @@
 import { useRef, useState } from 'react';
 import { ArrowLeft, Camera, Loader2, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
-import { image } from '@appdeploy/client';
 import {
     type Candidate,
     type CategorySummary,
     bulkAddWords,
+    describeApiError,
     extractWordsFromImage,
     fetchCategories,
 } from '../lib/api';
 import { isVerbCategory } from '../lib/verbs';
+import { ImageCropper } from './ImageCropper';
 
-type Step = 'select' | 'analyzing' | 'review' | 'saving' | 'done' | 'error';
+type Step = 'select' | 'preparing' | 'crop' | 'analyzing' | 'review' | 'saving' | 'done' | 'error';
 
 interface EditableCandidate extends Candidate {
     include: boolean;
+}
+
+interface PreparedImage {
+    dataUrl: string;
+    width: number;
+    height: number;
 }
 
 interface Props {
@@ -23,26 +30,60 @@ interface Props {
 
 export function ImportPhoto({ onBack, onImported }: Props) {
     const [step, setStep] = useState<Step>('select');
+    const [preparedImage, setPreparedImage] = useState<PreparedImage | null>(null);
     const [candidates, setCandidates] = useState<EditableCandidate[]>([]);
     const [categories, setCategories] = useState<CategorySummary[]>([]);
     const [errorMsg, setErrorMsg] = useState('');
     const [summary, setSummary] = useState<{ added: number; skipped: number } | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const startOver = () => {
+        setStep('select');
+        setPreparedImage(null);
+        setCandidates([]);
+        setSummary(null);
+    };
+
     const handleFile = async (file: File) => {
+        setStep('preparing');
+        setErrorMsg('');
+        try {
+            // Decode with EXIF orientation applied so portrait photos taken with the
+            // camera don't come out sideways, then re-encode onto a canvas we control.
+            const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+            const maxSide = 2400;
+            const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+            const w = Math.max(1, Math.round(bitmap.width * scale));
+            const h = Math.max(1, Math.round(bitmap.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('canvas-context-unavailable');
+            ctx.drawImage(bitmap, 0, 0, w, h);
+            bitmap.close();
+            setPreparedImage({ dataUrl: canvas.toDataURL('image/jpeg', 0.92), width: w, height: h });
+            setStep('crop');
+        } catch (err) {
+            setErrorMsg(describeApiError(err, 'Impossible de lire cette photo'));
+            setStep('error');
+        }
+    };
+
+    const handleCropConfirm = async ({ dataUrl, mimeType }: { dataUrl: string; mimeType: string }) => {
         setStep('analyzing');
         setErrorMsg('');
         try {
-            const prepared = await image.resizeIfNeeded(file);
+            const base64 = dataUrl.split(',')[1] || '';
             const [cats, result] = await Promise.all([
                 fetchCategories().catch(() => [] as CategorySummary[]),
-                extractWordsFromImage(prepared.data, prepared.mimeType),
+                extractWordsFromImage(base64, mimeType),
             ]);
             setCategories(cats);
             setCandidates(result.map((c) => ({ ...c, include: !c.duplicate })));
             setStep('review');
-        } catch {
-            setErrorMsg('La lecture de la photo a échoué. Vérifie ta connexion et réessaie.');
+        } catch (err) {
+            setErrorMsg(describeApiError(err, "La lecture de la photo a échoué"));
             setStep('error');
         }
     };
@@ -69,8 +110,8 @@ export function ImportPhoto({ onBack, onImported }: Props) {
             const res = await bulkAddWords(entries);
             setSummary({ added: res.added.length, skipped: res.skipped.length });
             setStep('done');
-        } catch {
-            setErrorMsg("Échec de l'ajout des mots.");
+        } catch (err) {
+            setErrorMsg(describeApiError(err, "Échec de l'ajout des mots"));
             setStep('error');
         }
     };
@@ -102,6 +143,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                         onChange={(e) => {
                             const f = e.target.files?.[0];
                             if (f) handleFile(f);
+                            e.target.value = '';
                         }}
                     />
                     <button
@@ -111,6 +153,23 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                         Choisir une photo
                     </button>
                 </div>
+            )}
+
+            {step === 'preparing' && (
+                <div className="flex flex-col items-center gap-3 mt-16 text-slate-500 dark:text-slate-400">
+                    <Loader2 className="animate-spin" size={32} />
+                    <p>Préparation de la photo…</p>
+                </div>
+            )}
+
+            {step === 'crop' && preparedImage && (
+                <ImageCropper
+                    src={preparedImage.dataUrl}
+                    naturalWidth={preparedImage.width}
+                    naturalHeight={preparedImage.height}
+                    onConfirm={handleCropConfirm}
+                    onCancel={startOver}
+                />
             )}
 
             {step === 'analyzing' && (
@@ -134,11 +193,11 @@ export function ImportPhoto({ onBack, onImported }: Props) {
             )}
 
             {step === 'error' && (
-                <div className="flex flex-col items-center gap-3 mt-16 text-center">
+                <div className="flex flex-col items-center gap-3 mt-16 text-center px-4">
                     <AlertTriangle className="text-red-500" size={32} />
                     <p className="text-red-600 dark:text-red-400">{errorMsg}</p>
                     <button
-                        onClick={() => setStep('select')}
+                        onClick={startOver}
                         className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
                     >
                         Réessayer
@@ -152,7 +211,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                         <div className="text-center mt-10">
                             <p className="text-slate-500 dark:text-slate-400 mb-4">Aucun mot n'a été reconnu sur cette photo.</p>
                             <button
-                                onClick={() => setStep('select')}
+                                onClick={startOver}
                                 className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
                             >
                                 Réessayer avec une autre photo
@@ -253,14 +312,7 @@ export function ImportPhoto({ onBack, onImported }: Props) {
                         </p>
                     )}
                     <div className="flex gap-3 mt-4">
-                        <button
-                            onClick={() => {
-                                setStep('select');
-                                setCandidates([]);
-                                setSummary(null);
-                            }}
-                            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200"
-                        >
+                        <button onClick={startOver} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-200">
                             Ajouter une autre photo
                         </button>
                         <button onClick={onImported} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium">

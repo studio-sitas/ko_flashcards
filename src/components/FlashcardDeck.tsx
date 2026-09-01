@@ -270,13 +270,13 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                                 <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
                                     {previewDisplayTerm}
                                 </p>
-                                <p className="text-lg text-emerald-600 dark:text-emerald-400">{previewDisplayPronunciation}</p>
+                                <p className="text-xl text-emerald-600 dark:text-emerald-400">{previewDisplayPronunciation}</p>
                                 {previewStillGenerating && (
-                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                    <p className="text-sm text-amber-600 dark:text-amber-400">
                                         Conjugaisons en cours de génération…
                                     </p>
                                 )}
-                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
+                                <p className="text-sm text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
                             </div>
                         </div>
                     )}
@@ -298,34 +298,36 @@ export function FlashcardDeck({ slug, categoryName, onBack, onManage }: Props) {
                             aria-label="Retourner la carte pour voir la traduction"
                         >
                             <div
-                                className="relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d]"
+                                className={`relative w-full h-full [transform-style:preserve-3d] ${
+                                    instant ? '' : 'transition-transform duration-500'
+                                }`}
                                 style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                             >
                                 <div className="absolute inset-0 rounded-3xl bg-white dark:bg-slate-800 shadow-xl border border-emerald-100 dark:border-slate-700 flex flex-col items-center justify-center gap-3 p-8 [backface-visibility:hidden]">
                                     <p className="text-4xl font-bold text-slate-800 dark:text-slate-100 text-center break-words">
                                         {displayTerm}
                                     </p>
-                                    <p className="text-lg text-emerald-600 dark:text-emerald-400">{displayPronunciation}</p>
+                                    <p className="text-xl text-emerald-600 dark:text-emerald-400">{displayPronunciation}</p>
                                     {stillGenerating && (
-                                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                                        <p className="text-sm text-amber-600 dark:text-amber-400">
                                             Conjugaisons en cours de génération…
                                         </p>
                                     )}
-                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
+                                    <p className="text-sm text-slate-400 dark:text-slate-500 mt-4">Touche pour voir la traduction</p>
                                 </div>
                                 <div className="absolute inset-0 rounded-3xl bg-emerald-600 dark:bg-emerald-700 shadow-xl flex flex-col items-center justify-center gap-2 p-6 overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]">
                                     <p className="text-3xl font-bold text-white text-center break-words">
                                         {current.translation}
                                         {isVerbs && negation === 'negatif' ? ' (négatif)' : ''}
                                     </p>
-                                    <p className="text-sm text-emerald-100">
+                                    <p className="text-base text-emerald-100">
                                         {displayTerm} · {displayPronunciation}
                                     </p>
                                     {current.example && (
                                         <div className="mt-2 pt-3 border-t border-emerald-400/40 w-full text-center">
-                                            <p className="text-sm text-emerald-50 italic break-words">{current.example.term}</p>
-                                            <p className="text-xs text-emerald-100/80 mt-0.5">{current.example.pronunciation}</p>
-                                            <p className="text-xs text-emerald-100/80">{current.example.translation}</p>
+                                            <p className="text-base text-emerald-50 italic break-words">{current.example.term}</p>
+                                            <p className="text-sm text-emerald-100/80 mt-0.5">{current.example.pronunciation}</p>
+                                            <p className="text-sm text-emerald-100/80">{current.example.translation}</p>
                                         </div>
                                     )}
                                 </div>
